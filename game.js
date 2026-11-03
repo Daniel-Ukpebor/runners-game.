@@ -14,7 +14,7 @@ const ui = {
 const isTouch = matchMedia('(pointer:coarse)').matches;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const THREE_COLOR = 0x232323;
-let renderer, camera, scene, world, actor, runner, runClock=0, started=false, paused=false;
+let renderer, camera, scene, world, actor, runner, rival, rivalArms=[], rivalLegs=[], runClock=0, started=false, paused=false;
 let startAt=0, elapsed=0, finished=false, collected=0, falls=0, feedbackUntil=0, flashUntil=0;
 let checkpointIndex=0, best=0, volume=true, audioContext=null;
 const route=[], obstacles=[], pickups=[], animated=[], groundShadows=[];
@@ -52,7 +52,14 @@ function pick(a){return a[Math.floor(rnd()*a.length)]}
 function clamp(n,a,b){return Math.min(Math.max(n,a),b)}
 function smooth(current,target,k,dt){return THREE.MathUtils.lerp(current,target,1-Math.exp(-k*dt))}
 function boot() {
-  scene=new THREE.Scene();scene.background=new THREE.Color(0xa9aeb1);scene.fog=new THREE.FogExp2(0xada9a7,.0125);
+  scene=new THREE.Scene();scene.background=new THREE.Color(0x8f9ca7);scene.fog=new THREE.FogExp2(0xba9f9b,.011);
+
+  // Painted-sky dome: evening amber at the horizon, deep slate overhead.
+  const skydome=new THREE.Mesh(new THREE.SphereGeometry(185,24,14),new THREE.ShaderMaterial({
+    side:THREE.BackSide,depthWrite:false,fog:false,
+    vertexShader:'varying vec3 vSky;void main(){vSky=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+    fragmentShader:'varying vec3 vSky;void main(){float h=normalize(vSky).y;float t=smoothstep(-0.28,0.65,h);vec3 horizon=vec3(0.89,0.59,0.48);vec3 high=vec3(0.37,0.52,0.65);gl_FragColor=vec4(mix(horizon,high,t),1.0);}'
+  }));scene.add(skydome);
   world=new THREE.Group();scene.add(world);
   camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.08,215);
   renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance',alpha:false});
@@ -67,7 +74,7 @@ function boot() {
   const sun=new THREE.DirectionalLight(0xffbd84,3.2);sun.position.set(-34,45,70);scene.add(sun);
   const ambient=new THREE.DirectionalLight(0xd5dfea,.7);ambient.position.set(20,20,-20);scene.add(ambient);
   ball(scene,-65,33,148,9,9,1,mat(0xffd3a0,.65));
-  buildDistrict();optimizeDistrict();makeCharacter();applyStyle();bindControls();resize();
+  buildDistrict();optimizeDistrict();makeCharacter();makeRival();applyStyle();bindControls();resize();
   ui.best.textContent=best?best.toFixed(1)+'s':'—';
   camera.position.set(0,5,-15);
   cameraAim.set(0,1,6);
@@ -88,7 +95,6 @@ function roof(index,x,z,w,length){
     }
   }
   // Leave open ends so jumps feel intentional.
-  block(g,x,.1,z-length/2,.0,.0,.0,clay);
   for(let j=0;j<length/1.75;j++){
     const zz=z-length/2+j*1.75;
     block(g,x+(rnd()-.5)*(w-2),.033,zz,.08,.008,.62,0x955f4e);
@@ -317,6 +323,56 @@ function makeCharacter(){
   runner.userData.legs=legs;
   paintHair();
 }
+
+function makeRival(){
+  rival=new THREE.Group();scene.add(rival);
+  const trunk=new THREE.Group();rival.add(trunk);
+  tube(trunk,0,.68,0,.29,.9,.27,0x4f5d62);
+  tube(trunk,0,.16,0,.29,.22,.25,0x2d353d);
+  ball(trunk,0,1.47,.035,.26,.32,.26,0xa27359);
+  ball(trunk,0,1.78,-.01,.27,.16,.27,0x202629);
+  for(const side of [-1,1]){
+    const a=new THREE.Group();a.position.set(side*.34,1.03,0);trunk.add(a);
+    tube(a,0,-.29,0,.14,.63,.14,0x52616b);
+    tube(a,0,-.64,.07,.12,.24,.12,0x9e715e);
+    rivalArms.push(a);
+    const l=new THREE.Group();l.position.set(side*.17,.13,0);trunk.add(l);
+    tube(l,0,-.39,0,.16,.8,.17,0x303d47);
+    block(l,0,-.82,.12,.33,.17,.47,0x232d34);
+    rivalLegs.push(l);
+  }
+  // Riven's mustard scarf makes their silhouette identifiable in motion.
+  block(trunk,0,1.18,-.05,.65,.13,.34,0xd8a567);
+  const tail=block(trunk,.23,1.1,-.31,.15,.5,.08,0xd8a567);tail.rotation.z=.2;
+  rival.userData.trunk=trunk;rival.visible=false;
+}
+function updateRival(dt){
+  if(!rival)return;
+  rival.visible=started||finished;
+  if(!rival.visible)return;
+  const z=Math.min(174.5,-5.5+elapsed*8.25);
+  let near=route[0],next=route[1];
+  for(let i=0;i<route.length;i++){
+    if(z>=route[i].z-10)near=route[i];
+    if(route[i].z>=z){next=route[i];break;}next=route.at(-1);
+  }
+  const p0=near,p1=next;
+  const t=p0===p1?0:clamp((z-p0.z)/(p1.z-p0.z),0,1);
+  const xx=p0.x+(p1.x-p0.x)*t+1.25;
+  // Jump automatically across the three-metre gaps between buildings.
+  let lift=0;
+  for(let i=0;i<route.length-1;i++){
+    const from=route[i],start=from.z+7.1;
+    if(z>=start&&z<=start+8.4){lift=Math.sin((z-start)/8.4*Math.PI)*1.65;break;}
+  }
+  rival.position.set(xx,1+lift,z);
+  rival.rotation.y=0;
+  const cyc=elapsed*12.5;
+  rivalArms.forEach((arm,i)=>arm.rotation.x=Math.sin(cyc+i*Math.PI)*.68);
+  rivalLegs.forEach((leg,i)=>leg.rotation.x=-Math.sin(cyc+i*Math.PI)*.75);
+  rival.userData.trunk.position.y=Math.abs(Math.sin(cyc))*.04;
+}
+
 function paintHair(){
   const hair=runner.userData.hair;if(!hair)return;
   hair.clear();const styleId=style.hair;
@@ -382,7 +438,7 @@ function resetPosition(point=0){
 function newRun(){
   elapsed=0;collected=0;falls=0;finished=false;paused=false;checkpointIndex=0;
   obstacles.forEach(o=>o.hit=0);pickups.forEach(p=>{p.taken=false;p.group.visible=true});
-  resetPosition(0);started=true;ui.splash.hidden=true;ui.modal.hidden=true;
+  resetPosition(0);started=true;ui.splash.hidden=true;ui.modal.hidden=true;if(rival)rival.visible=true;
   ui.hud.hidden=false;ui.controls.hidden=false;ui.pause.hidden=false;
   ui.pause.setAttribute('aria-label','Pause game');
   notify('REACH THE BELL TOWER · THE ROOFLINE',3);
@@ -480,7 +536,7 @@ function finish(){
   if(!best||elapsed<best){best=elapsed;try{localStorage.setItem('runners.best',best)}catch(e){}}
   ui.best.textContent=best.toFixed(1)+'s';
   ui.modal.hidden=false;ui.modalTitle.textContent='ROOFTOP CLEARED';
-  ui.modalText.textContent=elapsed.toFixed(1)+'s  ·  '+collected+'/5 SIGNALS  ·  '+falls+' FALLS\n\nRIVEN: "Not bad, Kai. That was just the warm-up."';
+  const beat=elapsed<180/8.25;ui.modalText.textContent=elapsed.toFixed(1)+'s  ·  '+collected+'/5 SIGNALS  ·  '+falls+' FALLS\n\n'+(beat?'YOU BEAT RIVEN! "Okay, now I see you." ':'RIVEN FINISHED FIRST. "Not bad, Kai. Try again." ');
   ui.modalPrimary.textContent='RACE AGAIN';ui.modalSecondary.textContent='START OVER';
   sound(660,.28,'triangle',.05);
   setTimeout(()=>sound(880,.32,'triangle',.04),160);
@@ -559,7 +615,7 @@ function animateCharacter(dt){
 function frame(now){
   requestAnimationFrame(frame);
   const dt=Math.min(.045,(now-(frame.previous||now))/1000);frame.previous=now;
-  simulation(dt);animateCharacter(dt);
+  simulation(dt);animateCharacter(dt);updateRival(dt);
   const narrow=innerHeight>innerWidth;
   const back=narrow?10.7:8.3,up=narrow?5.2:3.9,ahead=narrow?6.7:8.3;
   const followX=state.x*.82;
