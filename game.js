@@ -23,7 +23,7 @@ const radius=0.38, temp=new THREE.Vector3(), targetCamera=new THREE.Vector3(), c
 const state={x:0,y:1,z:-5.5,vx:0,vz:0,vy:0,grounded:true,coyote:0,buffer:0,slide:0,boost:0,runPhase:0,stepTimer:0,angle:0,airTime:0};
 const input={x:0,z:0,pointer:null,keys:new Set()};
 // Read-only diagnostics for automated mobile control tests.
-window.__runnersDiagnostics=()=>({x:state.x,z:state.z,y:state.y,time:elapsed,grounded:state.grounded,paused,finished,level:systems.getLevel().id,wallet:systems.getWallet()});
+window.__runnersDiagnostics=()=>({x:state.x,z:state.z,y:state.y,time:elapsed,grounded:state.grounded,paused,finished,level:systems.getLevel().id,wallet:systems.getWallet(),audio:systems.audioState()});
 if(location.hostname==='127.0.0.1'||location.hostname==='localhost'){
   window.__runnersTestApi={
     complete:()=>{if(!started)throw Error('No active race');state.z=route.at(-1).z+7.2;state.y=1;state.grounded=true;},
@@ -691,6 +691,10 @@ function simulation(dt){
   const velocity=Math.hypot(state.vx,state.vz);ui.speed.textContent=Math.round(velocity*3.6).toString();
   ui.meter.style.width=Math.round(clamp(velocity/(10.4+systems.getUpgrade('pace')*.42),0,1)*100)+'%';
   ui.pickup.textContent=collected+'/5';
+  if(state.grounded&&velocity>3&&state.slide<=0){
+    state.stepTimer+=dt;
+    if(state.stepTimer>.28){state.stepTimer=0;systems.sfx('footstep');}
+  }else state.stepTimer=0;
   if(runClock<flashUntil)renderer.domElement.classList.add('impact');else renderer.domElement.classList.remove('impact');
 }
 function animateCharacter(dt){
