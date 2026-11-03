@@ -214,6 +214,9 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
    ghost.visible=elapsed<=ghostFrame.at(-1).t+.1;
    ghost.position.set(a.x+(b.x-a.x)*f,a.y+(b.y-a.y)*f,a.z+(b.z-a.z)*f);
    ghost.rotation.y=a.r+(b.r-a.r)*f;
+   if(ghost.visible&&elapsed>.3){const distance=state.z-ghost.position.z;
+    $('ghost-indicator').textContent=(Math.abs(distance)/9).toFixed(1)+'s '+(distance>=0?'AHEAD OF':'BEHIND')+' YOUR SHADOW';
+   }
   }
   musicTick();
  }
