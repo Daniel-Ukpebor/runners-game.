@@ -428,32 +428,33 @@ function makeCharacter(){
   torso.rotation.z=.035;runner.userData.torso=torso;
   const waist=tube(body,0,.24,0,.29,.22,.24,0x343f49);
   const hood=ball(body,0,1.02,-.21,.36,.3,.23,0x7b3b33);runner.userData.hood=hood;
-  const chest=block(body,0,.64,.283,.36,.49,.035,0x303942);chest.rotation.z=.37;
+  const chest=block(body,-.14,.69,.267,.045,.49,.024,0x853f34);chest.rotation.z=-.055;
+  const seam=block(body,.14,.69,.267,.045,.49,.024,0x853f34);seam.rotation.z=.055;
   block(body,0,.33,.02,.39,.12,.34,0x30363b);
   const bag=ball(body,0,.59,-.38,.32,.43,.18,0x343a3b);runner.userData.bag=bag;
   block(body,0,.60,-.54,.31,.29,.04,0x866657);
   for(const side of [-1,1]){const strap=mesh(body,new THREE.CapsuleGeometry(.037,.55,3,7),0x374147,side*.25,.66,-.14);strap.rotation.z=side*.16;}
   const neck=tube(body,0,1.19,0,.16,.16,.16,0xa26f50);runner.userData.neck=neck;
   const face=ball(body,0,1.52,.08,.255,.32,.25,0xa26f50);runner.userData.face=face;
-  const earL=ball(body,-.255,1.52,.08,.055,.085,.08,0xa26f50);
-  const earR=ball(body,.255,1.52,.08,.055,.085,.08,0xa26f50);
+  const earL=ball(body,-.246,1.52,.075,.035,.069,.054,0xa26f50);
+  const earR=ball(body,.246,1.52,.075,.035,.069,.054,0xa26f50);
   runner.userData.ears=[earL,earR];
   // Nose and eyes are intentionally understated at game camera distance.
-  const nose=ball(body,0,1.51,.31,.055,.063,.075,0xa26f50);runner.userData.nose=nose;
-  const eyeL=ball(body,-.115,1.6,.294,.047,.031,.021,0xe9d9ca);
-  const eyeR=ball(body,.115,1.6,.294,.047,.031,.021,0xe9d9ca);
+  const nose=ball(body,0,1.50,.31,.033,.038,.042,0xa26f50);runner.userData.nose=nose;
+  const eyeL=ball(body,-.115,1.6,.294,.041,.024,.018,0xe9d9ca);
+  const eyeR=ball(body,.115,1.6,.294,.041,.024,.018,0xe9d9ca);
   runner.userData.eyes=[eyeL,eyeR];
   for(const side of [-1,1]){
     // Eyelids, brows and individually visible pupils read well in the large loadout preview.
-    ball(body,side*.115,1.607,.315,.021,.023,.014,0x322922);
+    ball(body,side*.115,1.607,.315,.017,.019,.012,0x322922);
     ball(body,side*.115,1.607,.327,.009,.012,.007,0x121718);
-    const brow=ball(body,side*.113,1.692,.3,.085,.022,.02,0x272324);
+    const brow=ball(body,side*.113,1.692,.3,.067,.016,.014,0x272324);
     brow.rotation.z=-side*.08;
     ball(body,side*.2,1.47,.247,.063,.031,.021,0x9b6756);
     ball(body,side*.256,1.50,.06,.034,.058,.033,0xa97b5e);
   }
-  ball(body,0,1.423,.319,.085,.018,.012,0x7c5147);
-  ball(body,0,1.406,.32,.067,.009,.012,0xc38675);
+  ball(body,0,1.408,.307,.064,.013,.008,0x7c5147);
+  ball(body,0,1.397,.31,.05,.009,.008,0xc38675);
   const glasses=new THREE.Group();body.add(glasses);
   for(const side of [-1,1]){
     mesh(glasses,new THREE.TorusGeometry(.11,.015,7,23),0x272d30,side*.117,1.60,.35);
@@ -515,7 +516,7 @@ function makeRival(){
     brow.rotation.z=-side*.13;rivalBrows.push(brow);
     ball(trunk,side*.255,1.43,.06,.037,.067,.035,0xa57659);
   }
-  ball(trunk,0,1.46,.315,.055,.055,.065,0xb3805f);
+  ball(trunk,0,1.46,.309,.029,.035,.035,0xb3805f);
   ball(trunk,0,1.351,.285,.086,.018,.015,0x623c36);
   const rivalHair=ball(trunk,0,1.78,-.01,.27,.16,.27,0x202629);
   for(const side of [-1,1]){
@@ -591,9 +592,10 @@ function paintHair(){
   const id=style.hair,base=new THREE.Color(palettes.hair[clamp(style.haircolor,0,palettes.hair.length-1)]),ink=mat(base),deep=mat(base.clone().multiplyScalar(.75));
   // All six styles have a clear silhouette from the third-person camera.
   if(id===0){ // short tight curls
-    for(let i=0;i<30;i++){
-      const a=i*2.39996,r=.055+.205*Math.sqrt((i+.5)/30);
-      ball(hair,Math.cos(a)*r,1.79+.045*rnd(),.02+Math.sin(a)*r,.094,.082,.095,deep);
+    ball(hair,0,1.785,.015,.26,.11,.265,deep);
+    for(let i=0;i<42;i++){
+      const a=i*2.39996,r=.05+.21*Math.sqrt((i+.5)/42);
+      ball(hair,Math.cos(a)*r,1.80+.027*rnd(),.02+Math.sin(a)*r,.056,.059,.055,deep);
     }
   }else if(id===1){ // textured crop
     ball(hair,0,1.775,.025,.265,.14,.275,ink);
@@ -953,7 +955,7 @@ function animateCharacter(dt){
   });
   runner.userData.torso.rotation.z=smooth(runner.userData.torso.rotation.z,state.vx*.015,7,dt);
   const blink=(((runClock*1.63)%6)>5.88)?0.22:1;
-  runner.userData.eyes.forEach(eye=>{eye.scale.y=smooth(eye.scale.y,.031*blink,24,dt)});
+  runner.userData.eyes.forEach(eye=>{eye.scale.y=smooth(eye.scale.y,.024*blink,24,dt)});
   // Fake contact shadow that shrinks as Kai jumps.
   const sh=groundShadows[0];if(sh){sh.visible=state.y<3.4;sh.position.y=-state.y+.018;sh.scale.x=.32+Math.max(0,state.y-1)*.04;sh.scale.z=.28+Math.max(0,state.y-1)*.04;}
 }
