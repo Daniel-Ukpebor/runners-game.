@@ -384,7 +384,7 @@ function newRun(){
   obstacles.forEach(o=>o.hit=0);pickups.forEach(p=>{p.taken=false;p.group.visible=true});
   resetPosition(0);started=true;ui.splash.hidden=true;ui.modal.hidden=true;
   ui.hud.hidden=false;ui.controls.hidden=false;ui.pause.hidden=false;
-  $('pause-button').setAttribute('aria-label','Pause game');
+  ui.pause.setAttribute('aria-label','Pause game');
   notify('REACH THE BELL TOWER · THE ROOFLINE',3);
   sound(410,.11);
 }
