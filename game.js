@@ -28,7 +28,7 @@ window.__runnersDiagnostics=()=>({x:state.x,z:state.z,y:state.y,time:elapsed,gro
 if(location.hostname==='127.0.0.1'||location.hostname==='localhost'){
   window.__runnersTestApi={
     complete:()=>{if(!started)throw Error('No active race');state.z=route.at(-1).z+7.2;state.y=1;state.grounded=true;},
-    obstacle:(index)=>{if(!started)throw Error('No active race');const o=obstacles[index];state.x=o.x;state.y=1;state.z=o.z-2.2;state.vx=state.vy=state.vz=0;state.grounded=true;return {kind:o.kind,z:o.z};}
+    obstacle:(index)=>{if(!started)throw Error('No active race');const o=obstacles[index];state.x=o.x;state.y=1;state.z=o.z-2.2;state.vx=state.vy=0;state.vz=6;state.grounded=true;return {kind:o.kind,z:o.z};}
   };
 }
 const palettes={
