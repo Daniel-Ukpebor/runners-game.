@@ -1,0 +1,111 @@
+/* RUNNERS / VESPER — story, progression and character detail */
+#menu-nav{display:flex;align-items:center;gap:4px;margin:18px 0 12px;padding-bottom:10px;border-bottom:1px solid #ecd9be55;touch-action:manipulation;flex-wrap:wrap}
+#menu-nav button{background:none;border:0;border-bottom:2px solid transparent;font-size:10px;letter-spacing:.10em;padding:9px 10px;color:#d4c0af;font-weight:900}
+#menu-nav button.nav-active{color:#ffce9a;border-color:#e3a46a}
+#menu-content{min-height:96px;color:#efddc9;font-size:12px;line-height:1.5;margin:5px 0 12px}
+.content-eyebrow{font-size:10px;letter-spacing:.16em;color:#dca774;font-weight:900}
+.current-chapter{font-size:21px;font-style:italic;font-weight:1000;letter-spacing:.03em;margin-top:7px}
+#menu-content p{color:#f0ddc9ad;margin:4px 0 10px}
+#menu-content p strong{color:#f8dcbf}
+.menu-wallet{padding:8px 10px;border-left:3px solid #cf835b;background:#14202391;font-size:11px;font-weight:900;letter-spacing:.13em}
+.menu-hint{color:#dbc9b3a1;font-size:10px;line-height:1.5;letter-spacing:.01em;margin-top:10px;font-weight:400}
+.menu-wallet .menu-hint{display:inline;margin-left:8px}
+.text-button{background:none;color:#f4bb82;border:0;border-bottom:1px solid #f4bb8266;padding:8px 0 4px;margin-top:7px;font-size:10px;letter-spacing:.14em;font-weight:900}
+.race-list{display:flex;flex-direction:column;gap:5px;margin:10px 0}
+.race-row{width:100%;display:flex;align-items:center;gap:12px;color:#f1dfc6;background:#18262bdc;border:1px solid #fee6c131;padding:9px 11px;text-align:left;min-height:58px;touch-action:manipulation}
+.race-row.chosen{border-color:#eeb078;background:#403c33ec}
+.race-row[disabled]{opacity:.43}
+.race-number{font-size:22px;color:#edb782;font-weight:1000;letter-spacing:-.06em}
+.race-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.race-copy b{font-size:12px;letter-spacing:.08em}
+.race-copy small{font-size:9px;color:#d3c4b5ad;letter-spacing:.06em}
+.race-record{font-size:10px;font-variant-numeric:tabular-nums;font-weight:900;color:#edc99f}
+.upgrade-row{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f8dfca2b}
+.upgrade-row>div{display:flex;flex-direction:column}
+.upgrade-row b{font-size:12px;letter-spacing:.1em}
+.upgrade-row small{font-size:10px;font-weight:400;color:#decab8aa}
+.level-pips{font-size:10px;color:#e8ad75;letter-spacing:.02em}
+.upgrade-row button{background:#e0aa7d;color:#162225;border:0;padding:10px 11px;min-width:75px;font-weight:900;font-size:10px}
+.upgrade-row button[disabled]{background:#566060;color:#cecbbf}
+.custom-subnote{font-size:10px;color:#d7c8b0ad;line-height:1.4;margin:8px 0 13px}
+.build-options{gap:5px}
+.build-options .hair-choice{font-size:9px;padding:9px 6px}
+#customize-panel{max-width:320px}
+#customize-panel.customize-focused{border-left-color:#eeb078}
+#customize-panel [data-skin]{width:29px;height:29px;border-radius:50%;border:1px solid #ffffff45}
+#customize-panel [data-skin].selected{outline:2px solid #eedbbd}
+#customize-panel .hair-choice{touch-action:manipulation}
+#ghost-indicator{position:absolute;top:88px;left:0;font-size:9px;letter-spacing:.13em;color:#b2f0ea;text-shadow:0 2px 4px #000;opacity:.68;pointer-events:none}
+#ghost-indicator.ghost-ready{color:#95f6ee;opacity:1}
+.hud-readout{display:inline-flex;gap:9px;align-items:center}
+.hud-credits{color:#ffd098;font-size:11px}
+#sound-hud{position:fixed;top:calc(17px + env(safe-area-inset-top));right:calc(max(22px,env(safe-area-inset-right)) + 49px);z-index:4;width:40px;height:40px;color:#fff0ce;background:#142025b3;border:1px solid #fff7;font-size:16px}
+.story-screen{position:fixed;inset:0;z-index:7;display:flex;align-items:center;justify-content:center;padding:20px;background:#0d171cf5;overflow-y:auto;touch-action:pan-y}
+.story-stage{width:min(1030px,100%);min-height:min(525px,86vh);display:grid;grid-template-columns:1.05fr 1fr;border-top:3px solid #e9b07d;border-bottom:1px solid #ffffff41;background:#19272b;box-shadow:14px 15px 0 #0b1315aa;overflow:hidden}
+.story-dawn{min-height:340px;position:relative;overflow:hidden;background:linear-gradient(0deg,#d18968 0%,#bb897a 34%,#606c83 75%,#344f6d 100%)}
+.story-dawn:after{content:'';position:absolute;bottom:-11%;left:-2%;width:104%;height:35%;background:#443c3c;clip-path:polygon(0 30%,100% 9%,100% 100%,0 100%)}
+.sun-disc{position:absolute;right:22%;top:27%;height:110px;width:110px;border-radius:50%;background:#ffd6a6;box-shadow:0 0 100px 35px #e6b89477}
+.story-houses:before,.story-houses:after{content:'';position:absolute;bottom:16%;height:43%;width:27%;background:#655a5c;border-top:12px solid #875f59;box-shadow:16px 0 0 #55525d44, 90px 45px 0 #69585c}
+.story-houses:before{left:0}.story-houses:after{right:-6%;height:52%;background:#625961}
+.story-figures{position:absolute;inset:0;z-index:2}
+.mini-runner{position:absolute;bottom:16%;width:43px;height:96px;border-radius:16px 16px 7px 7px;background:#242a34;transform:skew(-12deg)}
+.mini-runner:before{content:'';position:absolute;top:-32px;left:6px;width:33px;height:36px;background:#2a2d32;border-radius:50%}
+.mini-runner:after{content:'';position:absolute;bottom:-42px;left:4px;width:12px;height:49px;transform:rotate(20deg);background:#252932;box-shadow:23px 0 0 #252932}
+.mini-runner i{position:absolute;top:13px;left:-13px;width:13px;height:57px;background:#252932;transform:rotate(39deg)}
+.mini-runner b{position:absolute;top:11px;right:-16px;width:13px;height:58px;background:#252932;transform:rotate(-32deg)}
+.kai-kid{left:29%;background:#ab563f;transform:rotate(-8deg)}
+.riven-kid{left:55%;background:#506e6d;transform:rotate(13deg) scale(.9);bottom:19%}
+.story-screen[data-scene="2"] .story-dawn{background:linear-gradient(0deg,#845848,#c28f71 45%,#40566e)}
+.story-screen[data-scene="3"] .story-dawn{background:linear-gradient(0deg,#5d4b46,#b87861 37%,#32475b)}
+.story-copy{display:flex;flex-direction:column;justify-content:center;padding:clamp(22px,4vw,54px)}
+.story-location{font-size:10px;color:#ceb7a5;letter-spacing:.17em;margin-top:9px}
+.story-copy h2{font-size:17px;letter-spacing:.21em;color:#edb47e;margin:34px 0 5px}
+#story-dialogue{font-weight:900;font-style:italic;font-size:clamp(23px,3.4vw,40px);letter-spacing:-.03em;line-height:1.18;margin:0 0 22px}
+#story-context{color:#dbcdbd;font-size:13px;line-height:1.55}
+.story-actions{display:flex;gap:12px;align-items:center;margin-top:23px;flex-wrap:wrap}
+#story-step{margin-top:16px;color:#c4b29d;font-weight:900;letter-spacing:.18em;font-size:9px}
+.story-screen .secondary{font-size:10px;padding:14px 11px}
+#menu-nav button,#start,#sound-hud,.race-row,.upgrade-row button{user-select:none}
+@media (orientation:portrait){
+ #ghost-indicator{top:76px;font-size:8px}
+ .stats{gap:6px}
+ .hud-readout{gap:5px}
+ #menu-nav{gap:4px;margin:10px 0}
+ #menu-nav button{padding:9px 6px;font-size:9px}
+ .story-stage{grid-template-columns:1fr;max-width:490px;min-height:0}
+ .story-dawn{min-height:170px;max-height:210px}
+ .story-copy{padding:20px 22px}
+ .story-copy h2{margin-top:12px}
+ #story-dialogue{font-size:25px;margin-bottom:8px}
+ #story-context{font-size:12px}
+ .story-actions{margin-top:13px}
+ .sun-disc{width:80px;height:80px}
+ .mini-runner{transform:scale(.75);transform-origin:bottom center}
+}
+@media (orientation:landscape) and (max-height:520px){
+ #customize-panel .custom-label{margin:8px 0 5px}
+ #menu-nav{margin:5px 0 6px}
+ #menu-nav button{padding:5px 8px}
+ #menu-content{min-height:0;margin:0 0 6px}
+ .content-eyebrow{font-size:9px}
+ .race-row{min-height:43px;padding:5px 8px}
+ .race-number{font-size:18px}
+ .race-copy b{font-size:11px}
+ .race-list{gap:3px;margin:6px 0}
+ .upgrade-row{padding:5px 0}
+ .current-chapter{margin:2px 0;font-size:18px}
+ .menu-wallet{padding:5px}
+ .custom-subnote{font-size:9px;margin:5px 0}
+ #customize-panel .swatch{width:24px;height:24px}
+ #customize-panel [data-skin]{width:24px;height:24px}
+ #customize-panel .hair-choice{padding:7px;font-size:9px}
+ .story-stage{min-height:calc(100vh - 34px)}
+ .story-dawn{min-height:0}
+ .story-copy{padding:12px 23px}
+ .story-copy h2{font-size:12px;margin:8px 0}
+ #story-dialogue{font-size:25px;margin:0 0 10px}
+ #story-context{font-size:11px;line-height:1.4}
+ .story-actions{margin-top:12px}
+ .story-actions .primary,.story-actions .secondary{min-height:0;padding:11px 14px;font-size:10px}
+ #story-step{margin-top:8px}
+}
