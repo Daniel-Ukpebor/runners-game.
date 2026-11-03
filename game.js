@@ -21,7 +21,7 @@ let startAt=0, elapsed=0, finished=false, collected=0, falls=0, feedbackUntil=0,
 let checkpointIndex=0, best=0, volume=true, audioContext=null, builtLevel=0;
 const route=[], obstacles=[], pickups=[], animated=[], groundShadows=[], speedPads=[], birds=[];
 const radius=0.38, temp=new THREE.Vector3(), targetCamera=new THREE.Vector3(), cameraAim=new THREE.Vector3();
-const state={x:0,y:1,z:-5.5,vx:0,vz:0,vy:0,grounded:true,coyote:0,buffer:0,slide:0,boost:0,runPhase:0,stepTimer:0,angle:0,airTime:0,stuntScore:0,combo:0,comboWindow:0,pendingStunt:0,trick:0,trickUsed:false,vault:0};
+const state={x:0,y:1,z:-5.5,vx:0,vz:0,vy:0,grounded:true,coyote:0,buffer:0,slide:0,boost:0,runPhase:0,stepTimer:0,angle:0,airTime:0,stuntScore:0,combo:0,comboWindow:0,pendingStunt:0,trick:0,trickUsed:false,vault:0,landing:0,trickType:0};
 const input={x:0,z:0,pointer:null,keys:new Set()};
 // Read-only diagnostics for automated mobile control tests.
 window.__runnersDiagnostics=()=>({x:state.x,z:state.z,y:state.y,time:elapsed,grounded:state.grounded,paused,finished,level:systems.getLevel().id,wallet:systems.getWallet(),audio:systems.audioState(),stunts:state.stuntScore,pending:state.pendingStunt,trick:state.trick,vault:state.vault,cinema:!!(cinematic&&cinematic.isActive())});
@@ -668,7 +668,7 @@ function sound(freq=300,span=.08,kind='sine',gain=.045){
 }
 function resetPosition(point=0){
   const p=route[point];state.x=p.x;state.y=1;state.z=p.z-5;state.vx=0;state.vz=0;state.vy=0;
-  state.grounded=true;state.coyote=0;state.buffer=0;state.slide=0;state.boost=0;state.vault=0;state.trick=0;state.trickUsed=false;state.pendingStunt=0;
+  state.grounded=true;state.coyote=0;state.buffer=0;state.slide=0;state.boost=0;state.vault=0;state.trick=0;state.landing=0;state.trickUsed=false;state.pendingStunt=0;
 }
 function rebuildCourse(){
   world.clear();route.length=0;obstacles.length=0;pickups.length=0;animated.length=0;speedPads.length=0;birds.length=0;
@@ -734,8 +734,10 @@ function tryVault(){
 function trick(){
   if(!started||paused||finished||state.grounded||state.trickUsed||state.vault>.18)return;
   // Points only bank on a clean landing. No infinite mid-air farming.
-  state.trickUsed=true;state.trick=.68;state.pendingStunt=125;
-  notify('AIR ROLL · STICK THE LANDING',1.15);
+  state.trickUsed=true;state.trick=.68;
+  state.trickType=Math.abs(Math.round(state.vx))>2?1:(Math.floor(runClock*3)%2?2:0);
+  state.pendingStunt=[125,145,155][state.trickType];
+  notify(['FRONT FLIP','CORKSCREW','BACK FLIP'][state.trickType]+' · STICK THE LANDING',1.15);
   systems.sfx('trick');
 }
 
@@ -861,7 +863,7 @@ function simulation(dt){
   if(ui.toast.classList.contains('visible')&&runClock>feedbackUntil)ui.toast.classList.remove('visible');
   if(!started||paused||finished)return;
   elapsed+=dt;state.coyote=Math.max(0,state.coyote-dt);state.buffer=Math.max(0,state.buffer-dt);state.slide=Math.max(0,state.slide-dt);state.boost=Math.max(0,state.boost-dt);
-  state.vault=Math.max(0,state.vault-dt);state.trick=Math.max(0,state.trick-dt);state.comboWindow=Math.max(0,state.comboWindow-dt);
+  state.vault=Math.max(0,state.vault-dt);state.trick=Math.max(0,state.trick-dt);state.landing=Math.max(0,state.landing-dt);state.comboWindow=Math.max(0,state.comboWindow-dt);
   const left=input.keys.has('KeyA')||input.keys.has('ArrowLeft');
   const right=input.keys.has('KeyD')||input.keys.has('ArrowRight');
   const up=input.keys.has('KeyW')||input.keys.has('ArrowUp');
@@ -882,7 +884,7 @@ function simulation(dt){
     state.airTime+=dt;
     state.vy-=23.8*dt;state.y+=state.vy*dt;
     if(roof&&state.y<=1&&state.vy<=0){
-      state.y=1;state.vy=0;state.grounded=true;state.airTime=0;state.vault=0;
+      state.y=1;state.vy=0;state.grounded=true;state.airTime=0;state.vault=0;state.landing=.2;
       if(state.pendingStunt>0){bankStunt(state.pendingStunt,'CLEAN LANDING');state.pendingStunt=0;}
       if(state.buffer>0)performJump();else if(!wasGrounded)sound(190,.06,'triangle',.026);
     }
@@ -918,21 +920,29 @@ function animateCharacter(dt){
   runner.rotation.y=state.angle;
   const phaseRate=state.grounded?Math.min(16,speed*1.45):2.3;
   state.runPhase+=phaseRate*dt;
-  const phase=state.runPhase,stride=moving&&state.grounded&&!state.slide?Math.min(.9,speed*.078):0;
+  const phase=state.runPhase,stride=moving&&state.grounded&&!state.slide?Math.min(.95,speed*.078):0;
+  const landCompression=state.landing>0?Math.sin((.2-state.landing)/.2*Math.PI)*.18:0;
   const body=runner.userData.body;
-  body.position.y=smooth(body.position.y,(state.grounded&&moving&&!state.slide?Math.abs(Math.sin(phase))*0.065:0)-(state.slide>0?.3:0),12,dt);
-  const spin=state.trick>0?(-Math.PI*2)*(1-state.trick/.68):0;
-  body.rotation.x=smooth(body.rotation.x,state.trick>0?spin:(state.vault>0?-.5:state.slide>0?.72:(moving?.12:0)),state.trick>0?23:9,dt);
+  body.position.y=smooth(body.position.y,(state.grounded&&moving&&!state.slide?Math.abs(Math.sin(phase))*0.065:0)-(state.slide>0?.3:0)-landCompression,15,dt);
+  const phaseTrick=state.trick>0?(1-state.trick/.68):0;
+  const spin=phaseTrick*Math.PI*2*(state.trickType===2?1:-1);
+  body.rotation.x=smooth(body.rotation.x,state.trick>0&&state.trickType!==1?spin:(state.vault>0?-.55:state.slide>0?.7:(moving?.16:0)),state.trick>0?25:10,dt);
+  body.rotation.y=smooth(body.rotation.y,state.trick>0&&state.trickType===1?phaseTrick*Math.PI*2:Math.sin(phase)*stride*.06,state.trick>0?25:8,dt);
   body.rotation.z=smooth(body.rotation.z,-state.vx*.012,7,dt);
   runner.userData.legs.forEach((leg,i)=>{
-    leg.hip.rotation.x=smooth(leg.hip.rotation.x,state.slide>0?1.15:(state.grounded?Math.sin(phase+i*Math.PI)*stride:(i===0?-.34:.44)),12,dt);
-    leg.knee.rotation.x=smooth(leg.knee.rotation.x,state.slide>0?-1.45:(state.grounded?Math.max(0,-Math.sin(phase+i*Math.PI))*.75:-.4),12,dt);
+    leg.hip.rotation.x=smooth(leg.hip.rotation.x,state.slide>0?1.15:state.vault>0?.85:(state.grounded?Math.sin(phase+i*Math.PI)*stride:(i===0?-.34:.44)),12,dt);
+    leg.hip.rotation.z=smooth(leg.hip.rotation.z,(i===0?-1:1)*(.03+Math.min(.06,Math.abs(state.vx)*.005)),8,dt);
+    leg.knee.rotation.x=smooth(leg.knee.rotation.x,state.slide>0?-1.45:state.vault>0?-1.05:(state.grounded?Math.max(0,-Math.sin(phase+i*Math.PI))*.75:-.4),12,dt);
+    leg.shoe.rotation.x=smooth(leg.shoe.rotation.x,state.grounded?Math.sin(phase+i*Math.PI)*.22:-.24,10,dt);
   });
   runner.userData.arms.forEach((arm,i)=>{
-    arm.shoulder.rotation.x=smooth(arm.shoulder.rotation.x,state.slide>0?-.9:(state.grounded?-Math.sin(phase+i*Math.PI)*stride*.8:(i===0?-.7:-.3)),11,dt);
+    arm.shoulder.rotation.x=smooth(arm.shoulder.rotation.x,state.slide>0?-.9:state.vault>0?-1.35:(state.grounded?-Math.sin(phase+i*Math.PI)*stride*.8:(i===0?-.7:-.3)),11,dt);
+    arm.shoulder.rotation.z=smooth(arm.shoulder.rotation.z,(i===0?-.1:.1)+(moving?Math.sin(phase+i*Math.PI)*.05:0),9,dt);
     arm.elbow.rotation.x=smooth(arm.elbow.rotation.x,-.35,8,dt);
   });
   runner.userData.torso.rotation.z=smooth(runner.userData.torso.rotation.z,state.vx*.015,7,dt);
+  const blink=(((runClock*1.63)%6)>5.88)?0.22:1;
+  runner.userData.eyes.forEach(eye=>{eye.scale.y=smooth(eye.scale.y,.031*blink,24,dt)});
   // Fake contact shadow that shrinks as Kai jumps.
   const sh=groundShadows[0];if(sh){sh.visible=state.y<3.4;sh.position.y=-state.y+.018;sh.scale.x=.32+Math.max(0,state.y-1)*.04;sh.scale.z=.28+Math.max(0,state.y-1)*.04;}
 }
@@ -956,7 +966,7 @@ function frame(now){
    camera.position.lerp(targetCamera,1-Math.exp(-3.6*dt));
    cameraAim.set(state.x*.95,state.y+(narrow?1.3:1.2),state.z+ahead);
    camera.lookAt(cameraAim);
-   const goalFov=(narrow?65:67)+Math.max(0,Math.hypot(state.vx,state.vz)-7)*.48;camera.fov=smooth(camera.fov,goalFov,2,dt);camera.updateProjectionMatrix();
+   const goalFov=(narrow?65:67)+Math.max(0,Math.hypot(state.vx,state.vz)-7)*.48+(state.boost>0?2:0);camera.fov=smooth(camera.fov,goalFov,2,dt);camera.updateProjectionMatrix();
   }
   for(const [i,p] of pickups.entries())if(!p.taken){
     p.group.rotation.y+=dt*1.1;
