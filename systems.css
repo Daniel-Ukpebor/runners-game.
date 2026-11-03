@@ -169,3 +169,14 @@
  }
  #splash #customize-panel.customize-focused #avatar-preview{height:118px}
 }
+
+@media (orientation:landscape) and (max-height:520px){
+ #splash #customize-panel.customize-focused #avatar-preview{
+  position:sticky;
+  top:0;
+  z-index:3;
+  height:114px;
+  min-height:114px;
+  background:radial-gradient(ellipse at center,#536970ec,#1b292de8 75%);
+ }
+}
