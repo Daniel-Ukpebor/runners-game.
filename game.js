@@ -337,7 +337,38 @@ function makeCharacter(){
   runner.userData.ears=[earL,earR];
   // Nose and eyes are intentionally understated at game camera distance.
   const nose=ball(body,0,1.51,.31,.055,.063,.075,0xa26f50);runner.userData.nose=nose;
-  const eyeL=ball(body,-.12,1.6,.295,.028,.026,.025,0x292e31);const eyeR=ball(body,.12,1.6,.295,.028,.026,.025,0x292e31);runner.userData.eyes=[eyeL,eyeR];
+  const eyeL=ball(body,-.115,1.6,.294,.047,.031,.021,0xe9d9ca);
+  const eyeR=ball(body,.115,1.6,.294,.047,.031,.021,0xe9d9ca);
+  runner.userData.eyes=[eyeL,eyeR];
+  for(const side of [-1,1]){
+    // Eyelids, brows and individually visible pupils read well in the large loadout preview.
+    ball(body,side*.115,1.607,.315,.021,.023,.014,0x322922);
+    ball(body,side*.115,1.607,.327,.009,.012,.007,0x121718);
+    const brow=ball(body,side*.113,1.692,.3,.085,.022,.02,0x272324);
+    brow.rotation.z=-side*.08;
+    ball(body,side*.2,1.47,.247,.063,.031,.021,0x9b6756);
+    ball(body,side*.256,1.50,.06,.034,.058,.033,0xa97b5e);
+  }
+  ball(body,0,1.423,.319,.085,.018,.012,0x7c5147);
+  ball(body,0,1.406,.32,.067,.009,.012,0xc38675);
+  const glasses=new THREE.Group();body.add(glasses);
+  for(const side of [-1,1]){
+    mesh(glasses,new THREE.TorusGeometry(.11,.015,7,23),0x272d30,side*.117,1.60,.35);
+    const lens=ball(glasses,side*.117,1.60,.348,.083,.071,.006,mat(0x8bc5c6));
+    lens.material.transparent=true;lens.material.opacity=.3;
+    block(glasses,side*.26,1.603,.296,.14,.019,.027,0x24292b);
+  }
+  block(glasses,0,1.616,.354,.07,.022,.025,0x24292b);
+  const headband=new THREE.Group();body.add(headband);
+  const band=ball(headband,0,1.814,.045,.285,.064,.256,0x994539);
+  ball(headband,0,1.81,.293,.18,.04,.019,0xdaab81);
+  const goggles=new THREE.Group();body.add(goggles);
+  block(goggles,0,1.61,.34,.46,.13,.046,0x282b2e);
+  for(const side of [-1,1]){
+    const glass=ball(goggles,side*.116,1.61,.371,.098,.05,.017,0x77b9c7);
+    glass.material.transparent=true;glass.material.opacity=.84;
+  }
+  runner.userData.accessories=[null,glasses,headband,goggles];
   block(body,0,.84,.27,.17,.07,.06,0xe4b07a);
   const zipper=block(body,0,.64,.322,.035,.48,.016,0xe8b988);runner.userData.zipper=zipper;
   const hair=new THREE.Group();body.add(hair);runner.userData.hair=hair;
@@ -501,6 +532,7 @@ function applyStyle(){
   runner.userData.arms.forEach((a,i)=>a.shoulder.position.x=(i===0?-1:1)*(build===0?.41:build===1?.33:.37));
   runner.userData.legs.forEach((leg,i)=>leg.hip.position.x=(i===0?-1:1)*(build===1?.19:.17));
   if(runner.userData.bag)runner.userData.bag.visible=style.gear!==1;
+  runner.userData.accessories?.forEach((o,i)=>{if(o)o.visible=i===Number(style.accessory||0)});
   paintHair();
   systems.refreshAvatar();
   try{localStorage.setItem('runners.style',JSON.stringify(style))}catch(e){}
