@@ -82,3 +82,9 @@
  #desktop-hint{font-size:8px;max-width:70vw}
  #hud .stats>div:first-child{display:none!important}
 }
+
+/* Keep Studio Back outside the controls heading and above the 3D preview. */
+#customize-panel.customize-focused #studio-back{left:24px!important;right:auto!important;top:15px!important;bottom:auto!important;z-index:35!important;position:absolute!important;max-width:150px!important}
+#customize-panel.customize-focused #studio-stage .studio-head{margin-top:calc(75px + env(safe-area-inset-top))!important}
+@media (orientation:landscape) and (max-height:540px){#customize-panel.customize-focused #studio-stage .studio-head{margin-top:57px!important}}
+@media (orientation:portrait){#customize-panel.customize-focused #studio-back{left:17px!important;top:12px!important}#customize-panel.customize-focused #studio-stage .studio-head{margin-top:60px!important}}
