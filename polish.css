@@ -1,0 +1,83 @@
+/* RUNNERS 0.5 — production-minded art direction for the main hub/HUD */
+#splash.overlay{
+ background:linear-gradient(90deg,rgba(12,23,29,.96) 0%,rgba(15,27,32,.82) 35%,rgba(15,29,35,.28) 70%,rgba(15,29,35,.10) 100%)!important;
+}
+#splash .intro-grid{background:transparent!important}
+#splash .menu{max-width:560px!important}
+#splash #logo{
+ transform:skew(-7deg)!important;
+ color:#ffe9d0!important;
+ text-shadow:2px 3px 0 rgba(123,60,53,.58)!important;
+ letter-spacing:-.09em!important
+}
+#splash .story,#splash .featureline,#splash .intro-divider{display:none!important}
+#splash .hero-label{font-size:13px!important;color:#f0c49d!important}
+#splash #menu-content .content-eyebrow{font-size:10px!important;letter-spacing:.12em;color:#e7b88b}
+#splash .current-chapter{font-size:clamp(21px,3vw,29px)!important;line-height:1.05;margin:7px 0!important}
+#splash #menu-content p{font-size:12px!important;line-height:1.46;margin:8px 0 5px!important}
+#splash #menu-content .tier-note{display:block!important;margin:2px 0 0;color:#e7c4a3;font-size:10px!important}
+#splash #menu-content .menu-wallet{display:block!important;margin:4px 0!important;padding:4px 0!important}
+#splash .text-button{margin:4px 0!important;font-size:9px!important}
+#splash #start{margin-top:7px!important;margin-bottom:8px!important}
+#splash .hub-hint{display:block;margin-top:7px!important}
+#splash .meta{display:none!important}
+#splash #menu-content .future-routes{margin-top:7px!important}
+#splash #menu-content{padding-bottom:0;margin-bottom:0!important}
+#splash #menu-nav{margin:8px 0 9px!important}
+#splash #menu-nav button{border-radius:0!important}
+#splash #menu-content .race-list{scrollbar-color:#ad8668 transparent}
+#splash #menu-content .race-row{background:rgba(22,38,43,.82)!important}
+#splash #menu-content .race-row:disabled{opacity:.43}
+#splash #menu-content .tier-selector button.selected{background:#e4ad7b!important}
+#splash #menu-content .upgrade-row{border-bottom:1px solid #ffffff36}
+#splash #menu-content .upgrade-row b{letter-spacing:.06em;font-size:11px}
+#splash #menu-content .upgrade-row small{font-size:10px}
+#hud{top:calc(11px + env(safe-area-inset-top))!important}
+#hud #mark{font-size:18px!important;letter-spacing:.17em!important}
+#hud #chapter-label{font-size:8px!important;color:#ffe4c3bd!important}
+#hud .stat-label{font-size:8px!important;letter-spacing:.13em!important}
+#hud .stat-value{font-size:21px!important}
+#hud .stat-value.small{font-size:12px!important}
+#hud .stats{margin-right:50px!important;gap:14px!important}
+#hud .progress-track{margin-top:8px!important}
+#hud .bottom-meta{font-size:8px!important;margin-top:5px!important}
+#hud #ghost-indicator:not(.ghost-ready){display:none}
+#hud #ghost-indicator.ghost-ready{font-size:9px!important;color:#a5ece1}
+#hud #stunt-hud{top:calc(67px + env(safe-area-inset-top))!important;right:0}
+#hud #stunt-total{font-size:15px}
+#hud #stunt-combo{font-size:8px}
+#controls .action{backdrop-filter:blur(2px)}
+#controls #trick{border-color:#f4cb9b}
+@media (orientation:landscape) and (max-height:520px){
+ #splash .intro-grid{padding:calc(12px + env(safe-area-inset-top)) 24px 12px!important}
+ #splash #logo{font-size:clamp(47px,6.8vw,67px)!important}
+ #splash .hero-label{font-size:12px!important}
+ #splash .current-chapter{font-size:21px!important}
+ #splash #menu-content p{font-size:10px!important;line-height:1.31!important}
+ #splash #menu-content .menu-wallet{font-size:10px!important}
+ #splash #menu-content .tier-note{font-size:9px!important}
+ #splash #menu-nav{margin:5px 0!important}
+ #splash #menu-nav button{padding:5px 7px!important}
+ #splash #start{padding:9px 16px!important;min-height:36px!important}
+ #splash .hub-hint{font-size:8px!important;margin-top:3px!important}
+ #splash #menu-content .race-list{max-height:25vh!important}
+ #splash #menu-content .future-routes{margin-top:3px!important}
+ #splash #menu-content .future-route{font-size:9px!important}
+ #hud .stats>div:first-child{display:none!important}
+ #hud .stats{gap:9px!important;margin-right:51px!important}
+ #hud .bottom-meta{font-size:8px!important}
+ #hud #stunt-hud{top:calc(64px + env(safe-area-inset-top))!important}
+ #hud #ghost-indicator{display:none!important}
+}
+@media (orientation:portrait){
+ #splash .menu{max-width:none!important}
+ #splash .intro-grid{padding:calc(25px + env(safe-area-inset-top)) 23px 28px!important}
+ #splash .hero-label{font-size:13px!important}
+ #splash #logo{font-size:64px!important}
+ #splash #menu-nav{margin:10px 0!important}
+ #splash #menu-content .race-list{max-height:41vh!important}
+ #hud .stats>div:first-child{display:none!important}
+ #hud .stats>div:nth-child(3){display:none!important}
+ #hud .stats{margin-right:40px!important}
+ #hud #stunt-hud{top:calc(78px + env(safe-area-inset-top))!important}
+}
