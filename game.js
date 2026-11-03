@@ -21,10 +21,10 @@ let startAt=0, elapsed=0, finished=false, collected=0, falls=0, feedbackUntil=0,
 let checkpointIndex=0, best=0, volume=true, audioContext=null, builtLevel=0;
 const route=[], obstacles=[], pickups=[], animated=[], groundShadows=[];
 const radius=0.38, temp=new THREE.Vector3(), targetCamera=new THREE.Vector3(), cameraAim=new THREE.Vector3();
-const state={x:0,y:1,z:-5.5,vx:0,vz:0,vy:0,grounded:true,coyote:0,buffer:0,slide:0,boost:0,runPhase:0,stepTimer:0,angle:0,airTime:0};
+const state={x:0,y:1,z:-5.5,vx:0,vz:0,vy:0,grounded:true,coyote:0,buffer:0,slide:0,boost:0,runPhase:0,stepTimer:0,angle:0,airTime:0,stuntScore:0,combo:0,comboWindow:0,pendingStunt:0,trick:0,trickUsed:false,vault:0};
 const input={x:0,z:0,pointer:null,keys:new Set()};
 // Read-only diagnostics for automated mobile control tests.
-window.__runnersDiagnostics=()=>({x:state.x,z:state.z,y:state.y,time:elapsed,grounded:state.grounded,paused,finished,level:systems.getLevel().id,wallet:systems.getWallet(),audio:systems.audioState()});
+window.__runnersDiagnostics=()=>({x:state.x,z:state.z,y:state.y,time:elapsed,grounded:state.grounded,paused,finished,level:systems.getLevel().id,wallet:systems.getWallet(),audio:systems.audioState(),stunts:state.stuntScore,pending:state.pendingStunt,trick:state.trick,vault:state.vault,cinema:!!(cinematic&&cinematic.isActive())});
 if(location.hostname==='127.0.0.1'||location.hostname==='localhost'){
   window.__runnersTestApi={
     complete:()=>{if(!started)throw Error('No active race');state.z=route.at(-1).z+7.2;state.y=1;state.grounded=true;},
@@ -86,7 +86,7 @@ function boot() {
   keySun=new THREE.DirectionalLight(0xffbd84,2.55);keySun.position.set(-34,45,70);scene.add(keySun);
   const ambient=new THREE.DirectionalLight(0xd5dfea,.55);ambient.position.set(20,20,-20);scene.add(ambient);
   ball(scene,-65,33,148,9,9,1,mat(0xffd3a0,.65));
-  buildDistrict();optimizeDistrict();makeCharacter();makeRival();tuneDistrict();applyStyle();systems.init();cinematic=createCinematic({THREE,scene,camera,actor,rival,runner,route,ensureCourse:()=>{if(builtLevel!==systems.levelIndex())rebuildCourse()}});bindControls();resize();
+  buildDistrict();optimizeDistrict();makeCharacter();makeRival();tuneDistrict();applyStyle();systems.init();createStuntHud();cinematic=createCinematic({THREE,scene,camera,actor,rival,runner,route,ensureCourse:()=>{if(builtLevel!==systems.levelIndex())rebuildCourse()}});bindControls();resize();
   ui.best.textContent=systems.getBest()===null?'—':Number(systems.getBest()).toFixed(1)+'s';
   camera.position.set(0,5,-15);
   cameraAim.set(0,1,6);
@@ -509,7 +509,7 @@ function sound(freq=300,span=.08,kind='sine',gain=.045){
 }
 function resetPosition(point=0){
   const p=route[point];state.x=p.x;state.y=1;state.z=p.z-5;state.vx=0;state.vz=0;state.vy=0;
-  state.grounded=true;state.coyote=0;state.buffer=0;state.slide=0;state.boost=0;
+  state.grounded=true;state.coyote=0;state.buffer=0;state.slide=0;state.boost=0;state.vault=0;state.trick=0;state.trickUsed=false;state.pendingStunt=0;
 }
 function rebuildCourse(){
   world.clear();route.length=0;obstacles.length=0;pickups.length=0;animated.length=0;
@@ -527,7 +527,8 @@ function goMain(){
 function newRun(){
   if(builtLevel!==systems.levelIndex())rebuildCourse();
   elapsed=0;collected=0;falls=0;finished=false;paused=false;checkpointIndex=0;
-  obstacles.forEach(o=>o.hit=0);pickups.forEach(p=>{p.taken=false;p.group.visible=true});
+  state.stuntScore=0;state.combo=0;state.comboWindow=0;state.pendingStunt=0;state.trick=0;state.trickUsed=false;state.vault=0;updateStuntHud();
+  obstacles.forEach(o=>{o.hit=0;o.vaulted=false;o.cleared=false;});pickups.forEach(p=>{p.taken=false;p.group.visible=true});
   resetPosition(0);started=true;ui.splash.hidden=true;ui.modal.hidden=true;if(rival)rival.visible=true;
   ui.hud.hidden=false;ui.controls.hidden=false;ui.pause.hidden=false;$('sound-hud').hidden=false;
   ui.pause.setAttribute('aria-label','Pause game');
@@ -537,14 +538,55 @@ function newRun(){
   sound(410,.11);
 }
 
+function createStuntHud(){
+  const hud=document.createElement('div');hud.id='stunt-hud';
+  hud.innerHTML='<strong id="stunt-total">0000</strong><span id="stunt-combo">STYLE POINTS</span>';
+  ui.hud.appendChild(hud);
+}
+function updateStuntHud(){
+  const score=$('stunt-total');if(!score)return;
+  score.textContent=String(state.stuntScore).padStart(4,'0');
+  $('stunt-combo').textContent=state.combo>1?'x'+state.combo+' FLOW COMBO':'STYLE POINTS';
+}
+function bankStunt(points,label){
+  if(!started||finished)return;
+  if(state.comboWindow<=0)state.combo=0;
+  state.combo=Math.min(5,state.combo+1);state.comboWindow=6.5;
+  const gained=Math.round(points*(1+.25*(state.combo-1)));
+  state.stuntScore+=gained;
+  updateStuntHud();
+  notify(label+'  +'+gained+(state.combo>1?'  x'+state.combo+' FLOW':''),1.5);
+  systems.sfx('trick');
+}
+function tryVault(){
+  if(!state.grounded||state.vz<2.1)return false;
+  const target=obstacles.find(o=>o.kind!=='beam'&&!o.vaulted&&
+    o.z-state.z>.18&&o.z-state.z<2.35&&
+    Math.abs(state.x-o.x)<o.w*.5+.15);
+  if(!target)return false;
+  target.vaulted=true;state.vault=.52;state.vy=8.4+systems.getUpgrade('spring')*.25;
+  state.vz=Math.max(state.vz,9.8);state.grounded=false;state.coyote=0;
+  state.buffer=0;state.airTime=0;state.slide=0;state.trickUsed=false;
+  bankStunt(95,'SPEED VAULT');systems.sfx('vault');
+  return true;
+}
+function trick(){
+  if(!started||paused||finished||state.grounded||state.trickUsed||state.vault>.18)return;
+  // Points only bank on a clean landing. No infinite mid-air farming.
+  state.trickUsed=true;state.trick=.68;state.pendingStunt=125;
+  notify('AIR ROLL · STICK THE LANDING',1.15);
+  systems.sfx('trick');
+}
+
 function jump(){
   if(!started||paused||finished)return;
+  if(tryVault())return;
   state.buffer=.17;
   if(state.grounded||state.coyote>0)performJump();
 }
 function performJump(){
   state.vy=9.8+systems.getUpgrade('spring')*.65;state.grounded=false;state.coyote=0;state.buffer=0;
-  state.slide=0;state.airTime=0;
+  state.slide=0;state.airTime=0;state.trickUsed=false;state.pendingStunt=0;
   sound(420,.13,'triangle',.06);systems.sfx('jump');
 }
 function slide(){
@@ -571,12 +613,13 @@ function bindControls(){
   stick.addEventListener('pointermove',move);
   const release=e=>{if(input.pointer!==e.pointerId)return;input.pointer=null;input.x=0;input.z=0;thumb.style.transform='translate(0,0)'};
   stick.addEventListener('pointerup',release);stick.addEventListener('pointercancel',release);
-  actionPointer('jump',jump);actionPointer('slide',slide);
+  actionPointer('jump',jump);actionPointer('slide',slide);actionPointer('trick',trick);
   addEventListener('keydown',e=>{
     if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
     input.keys.add(e.code);
     if(!e.repeat&&(e.code==='Space'||e.code==='KeyJ'))jump();
     if(!e.repeat&&(e.code==='KeyC'||e.code==='ShiftLeft'))slide();
+    if(!e.repeat&&(e.code==='KeyK'||e.code==='KeyF'))trick();
     if(!e.repeat&&e.code==='Escape'&&started&&!finished)togglePause();
   },{passive:false});
   addEventListener('keyup',e=>input.keys.delete(e.code));
@@ -605,19 +648,22 @@ function togglePause(){
   }
 }
 function kill(){
-  falls++;resetPosition(checkpointIndex);
+  falls++;resetPosition(checkpointIndex);state.combo=0;state.comboWindow=0;state.pendingStunt=0;updateStuntHud();
   elapsed+=2.5;notify('MISSED THE LANDING  +2.5s',2.2);sound(118,.22,'triangle',.05);
 }
 function collide(t){
   for(const o of obstacles){
     if(Math.abs(state.x-o.x)>(o.w*.5+radius)||Math.abs(state.z-o.z)>(o.d*.5+radius))continue;
     let safe=false;
-    if(o.kind==='crate')safe=state.y>2.15;
-    if(o.kind==='beam')safe=state.slide>.12||state.y>2.95;
-    if(o.kind==='barrier')safe=state.y>2.05;
+    if(o.kind==='crate')safe=state.y>2.15||state.vault>0;
+    if(o.kind==='beam'){
+      safe=state.slide>.12||state.y>2.95;
+      if(safe&&state.slide>.12&&!o.cleared){o.cleared=true;bankStunt(75,'CLEAN SLIDE');}
+    }
+    if(o.kind==='barrier')safe=state.y>2.05||state.vault>0;
     if(safe)continue;
     if(o.hit>runClock-.65)continue;
-    o.hit=runClock;elapsed+=.65;state.vz=-1.5;state.z=Math.min(state.z,o.z-o.d*.5-radius-.06);
+    o.hit=runClock;state.combo=0;state.comboWindow=0;state.pendingStunt=0;updateStuntHud();elapsed+=.65;state.vz=-1.5;state.z=Math.min(state.z,o.z-o.d*.5-radius-.06);
     flashUntil=runClock+.15;notify(o.kind==='beam'?'SLIDE UNDER THE BEAM · +0.7s':o.kind==='barrier'?'JUMP THE WALL · +0.7s':'JUMP OR DETOUR · +0.7s',1.2);
     sound(130,.12,'square',.025);systems.sfx('hit');
   }
@@ -630,12 +676,12 @@ function checkpoint(){
 function finish(){
   finished=true;started=false;ui.controls.hidden=true;ui.pause.hidden=true;
   $('sound-hud').hidden=true;
-  const info=systems.afterFinish({elapsed,collected,falls});
+  const info=systems.afterFinish({elapsed,collected,falls,stuntScore:state.stuntScore});
   const benchmark=(route.at(-1).z+11.5)/systems.getLevel().speed;
   const beat=elapsed<benchmark;
   ui.best.textContent=Number(systems.getBest()).toFixed(1)+'s';
   ui.modal.hidden=false;ui.modalTitle.textContent=beat?'RIVAL BEATEN':'ROOFTOP CLEARED';
-  ui.modalText.textContent=elapsed.toFixed(1)+'s  ·  '+collected+'/5 SIGNALS  ·  '+falls+' FALLS\n\n'+
+  ui.modalText.textContent=elapsed.toFixed(1)+'s  ·  '+collected+'/5 SIGNALS  ·  '+falls+' FALLS\n'+state.stuntScore+' STYLE POINTS  ·  +'+info.stuntCredits+' TRICK CREDITS\n\n'+
     (info.personalBest?'NEW PERSONAL BEST · YOUR SHADOW IS SAVED\n':'')+
     '◈ +'+info.reward+' ROUTE CREDITS\n\n'+
     (beat?systems.getLevel().rival.toUpperCase()+': “You got me this time. Not bad.”':
@@ -653,6 +699,7 @@ function simulation(dt){
   if(ui.toast.classList.contains('visible')&&runClock>feedbackUntil)ui.toast.classList.remove('visible');
   if(!started||paused||finished)return;
   elapsed+=dt;state.coyote=Math.max(0,state.coyote-dt);state.buffer=Math.max(0,state.buffer-dt);state.slide=Math.max(0,state.slide-dt);state.boost=Math.max(0,state.boost-dt);
+  state.vault=Math.max(0,state.vault-dt);state.trick=Math.max(0,state.trick-dt);state.comboWindow=Math.max(0,state.comboWindow-dt);
   const left=input.keys.has('KeyA')||input.keys.has('ArrowLeft');
   const right=input.keys.has('KeyD')||input.keys.has('ArrowRight');
   const up=input.keys.has('KeyW')||input.keys.has('ArrowUp');
@@ -673,7 +720,8 @@ function simulation(dt){
     state.airTime+=dt;
     state.vy-=23.8*dt;state.y+=state.vy*dt;
     if(roof&&state.y<=1&&state.vy<=0){
-      state.y=1;state.vy=0;state.grounded=true;state.airTime=0;
+      state.y=1;state.vy=0;state.grounded=true;state.airTime=0;state.vault=0;
+      if(state.pendingStunt>0){bankStunt(state.pendingStunt,'CLEAN LANDING');state.pendingStunt=0;}
       if(state.buffer>0)performJump();else if(!wasGrounded)sound(190,.06,'triangle',.026);
     }
   } else {state.y=1;state.vy=0;}
@@ -711,7 +759,8 @@ function animateCharacter(dt){
   const phase=state.runPhase,stride=moving&&state.grounded&&!state.slide?Math.min(.9,speed*.078):0;
   const body=runner.userData.body;
   body.position.y=smooth(body.position.y,(state.grounded&&moving&&!state.slide?Math.abs(Math.sin(phase))*0.065:0)-(state.slide>0?.3:0),12,dt);
-  body.rotation.x=smooth(body.rotation.x,state.slide>0?.72:(moving?.12:0),9,dt);
+  const spin=state.trick>0?(-Math.PI*2)*(1-state.trick/.68):0;
+  body.rotation.x=smooth(body.rotation.x,state.trick>0?spin:(state.vault>0?-.5:state.slide>0?.72:(moving?.12:0)),state.trick>0?23:9,dt);
   body.rotation.z=smooth(body.rotation.z,-state.vx*.012,7,dt);
   runner.userData.legs.forEach((leg,i)=>{
     leg.hip.rotation.x=smooth(leg.hip.rotation.x,state.slide>0?1.15:(state.grounded?Math.sin(phase+i*Math.PI)*stride:(i===0?-.34:.44)),12,dt);
