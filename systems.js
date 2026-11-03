@@ -12,18 +12,18 @@ export const LEVELS=[
 ];
 export const STORIES=[
  [
-  {time:'TEN YEARS EARLIER',where:'THE STEPS / MARKET STREET',who:'RIVEN, AGE 9',text:'“Last one to the bell tower carries the groceries.”',desc:'Two kids. One shortcut across the old neighborhood. The first race wasn’t supposed to count.'},
-  {time:'THAT SUMMER',where:'VESPER / EVERY ROOFTOP',who:'KAI',text:'“We can race the whole city one day.”',desc:'Kai and Riven mapped shortcuts on scraps of paper, argued about finish lines, and kept racing until the streetlights came on.'},
-  {time:'PRESENT DAY',where:'THE STEPS / ROOFLINE',who:'RIVEN',text:'“The city’s running the Midnight Circuit. Three districts. Three qualifiers. You coming?”',desc:'Riven has already entered. Kai has one afternoon to prove that those childhood races still mean something.'},
-  {time:'CHAPTER ONE',where:'THE STEPS / START LINE',who:'RIVEN',text:'“Same bell tower. This time, no shortcuts through the street.”',desc:'Reach the finish first. Jump rooftop gaps, slide beneath low beams, and collect signals for upgrade credits.'}
+  {time:'TEN YEARS EARLIER · 6:14 PM',where:'THE STEPS / MARKET STREET',who:'KAI, AGE NINE',text:'“That’s cheating. You took the stairs.”',desc:'Riven was already on the next roof. The loser carried two bags of tomatoes back uphill.'},
+  {time:'THE SUMMER RIVEN LEFT',where:'THE OLD BELL TOWER',who:'RIVEN',text:'“Keep our map. I’m not done with you.”',desc:'They drew rooftop shortcuts on the back of a grocery receipt. When Riven moved away, Kai folded it and stopped adding routes.'},
+  {time:'PRESENT DAY · 6:14 PM',where:'ABOVE THE MARKET',who:'RIVEN',text:'“You still remember the way up?”',desc:'Riven is back for the Midnight Circuit qualifiers, wearing a race bib and that same ridiculous grin. Kai still has the map.'},
+  {time:'CHAPTER ONE · THE STEPS',where:'THE OLD START LINE',who:'KAI',text:'“No stairs this time.”',desc:'Same rooftops. Same bell tower. Riven takes off first, and Kai is already running before the words are out.'}
  ],
  [
-  {time:'AFTER THE BELL TOWER',where:'OLD MARKET / DISTRICT TWO',who:'SABLE',text:'“Riven ran a straight line. That won’t work up here.”',desc:'Sable grew up threading narrow market rooftops as a courier. She knows every rooftop obstacle and every crowded shortcut.'},
-  {time:'CHAPTER TWO',where:'THE MARKETLINE / SUNSET',who:'KAI',text:'“Then show me the real route.”',desc:'Two circuits remain before the Midnight Run. The Marketline turns harder, and Sable won’t slow down for anyone.'}
+  {time:'AFTER THE BELL TOWER',where:'VESPER / MARKETLINE',who:'SABLE',text:'“Riven told me you run fast. Didn’t say you could turn.”',desc:'Sable delivers parcels across these awnings before the market opens. She calls every crate and rail by name.'},
+  {time:'CHAPTER TWO · MARKETLINE',where:'ROOF ABOVE THE OLD BAKERY',who:'KAI',text:'“Then pick the route. I’ll keep up.”',desc:'The turns are sharper, the obstacles closer, and Sable has already disappeared around the first corner.'}
  ],
  [
-  {time:'THE LAST QUALIFIER',where:'NORTH LOOKOUT / DISTRICT THREE',who:'VALE',text:'“The first two were warm-ups. This one decides who runs after dark.”',desc:'Vale has been the fastest runner on the Nightline for three years. Even Riven hasn’t beaten their time.'},
-  {time:'CHAPTER THREE',where:'THE NIGHTLINE / FINAL RACE',who:'KAI',text:'“I didn’t come this far to watch someone else finish.”',desc:'A longer route. Narrower landings. One final rival before the Midnight Circuit.'}
+  {time:'THE FINAL QUALIFIER',where:'NORTH LOOKOUT / NIGHTLINE',who:'VALE',text:'“You beat two runners. You haven’t beaten this roof.”',desc:'Vale holds the lookout record. The Nightline is narrow in daylight; tonight the lights are going on one by one.'},
+  {time:'CHAPTER THREE · NIGHTLINE',where:'THE LAST START LINE',who:'KAI',text:'“I’ve been running this city since I was nine.”',desc:'One last qualifier. The bell tower is a long way behind them now. The old grocery receipt is still in Kai’s pocket.'}
  ]
 ];
 const SAVE_KEY='runners.save.v3';
@@ -83,6 +83,10 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   hairs.insertAdjacentHTML('afterend','<button class="hair-choice" data-hair="3">AFRO</button><button class="hair-choice" data-hair="4">BRAIDS</button><button class="hair-choice" data-hair="5">LOCS</button>');
   const hairSwatches=document.createElement('div');hairSwatches.innerHTML='<div class="custom-label">HAIR COLOR</div><div class="swatches"><button class="swatch hair-swatch" data-haircolor="0" aria-label="Black hair" style="background:#222428"></button><button class="swatch hair-swatch" data-haircolor="1" aria-label="Brown hair" style="background:#443128"></button><button class="swatch hair-swatch" data-haircolor="2" aria-label="Auburn hair" style="background:#744329"></button><button class="swatch hair-swatch" data-haircolor="3" aria-label="Blonde hair" style="background:#be9063"></button><button class="swatch hair-swatch" data-haircolor="4" aria-label="Burgundy hair" style="background:#8b3142"></button></div>';
   hairs.closest('.swatches').insertAdjacentElement('afterend',hairSwatches);
+  const gearOptions=document.createElement('div');gearOptions.id='gear-options';
+  gearOptions.innerHTML='<div class="custom-label">GEAR</div><div class="swatches"><button class="hair-choice" data-gear="0">DAYPACK</button><button class="hair-choice" data-gear="1">NO PACK</button></div>';
+  hairSwatches.insertAdjacentElement('afterend',gearOptions);
+
   const oldSkin=['#e0ad87','#c18b66','#9c674c','#633e32','#efc7a6','#8e5b46'];
   const newSkin=['#edc7a5','#d8a47b','#b77c58','#89583e','#573728','#c99169'];
   aside.querySelectorAll('[data-skin]').forEach((b,i)=>b.style.background=newSkin[i]);
