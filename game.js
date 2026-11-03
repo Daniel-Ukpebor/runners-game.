@@ -21,6 +21,8 @@ const route=[], obstacles=[], pickups=[], animated=[], groundShadows=[];
 const radius=0.38, temp=new THREE.Vector3(), targetCamera=new THREE.Vector3(), cameraAim=new THREE.Vector3();
 const state={x:0,y:1,z:-5.5,vx:0,vz:0,vy:0,grounded:true,coyote:0,buffer:0,slide:0,boost:0,runPhase:0,stepTimer:0,angle:0,airTime:0};
 const input={x:0,z:0,pointer:null,keys:new Set()};
+// Read-only diagnostics for automated mobile control tests.
+window.__runnersDiagnostics=()=>({x:state.x,z:state.z,y:state.y,time:elapsed,grounded:state.grounded,paused,finished});
 const palettes={
   stone:[0xb58d78,0xcaa68d,0xbfa58f,0xa97966,0xcfaf95,0x967b78],
   roof:[0xb16b55,0xc1815f,0x9d6052,0xc68b68],
