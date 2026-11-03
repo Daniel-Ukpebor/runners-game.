@@ -66,7 +66,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
  function createUI(){
   const menu=$('splash').querySelector('.menu');
   const title=menu.querySelector('.hero-label');
-  title.innerHTML='THE STEPS <span style="color:#dba87f">/</span> A CITY TO OUTRUN';
+  title.textContent='VESPER CITY / THE MIDNIGHT CIRCUIT';
   const story=menu.querySelector('.story');
   story.innerHTML='Kai and Riven started racing through Vesper when they were kids. Now the <strong>Midnight Circuit</strong> is open, and old promises have turned into real rivalries. <strong>Three districts. Three rivals. Your best times.</strong>';
   menu.querySelector('.featureline').innerHTML='<span>THREE RIVALS</span><span>YOUR GHOST</span><span>ONE CITY</span>';
@@ -77,6 +77,9 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   // Put START at the top of the menu; it must be visible without scrolling in landscape.
   menu.insertBefore($('start'),title);
   const content=document.createElement('div');content.id='menu-content';menu.insertBefore(content,menu.querySelector('.featureline'));
+  // Primary action belongs AFTER the active view, not above its label.
+  menu.insertBefore($('start'),menu.querySelector('.featureline'));
+  const logo=menu.querySelector('#logo');logo.setAttribute('aria-label','RUNNERS');
   menu.querySelector('.meta').textContent='BUILD 0.4 · Your chapters, looks, upgrades and shadow times stay saved on this device. Landscape Safari recommended.';
   const aside=$('splash').querySelector('.customize');
   aside.id='customize-panel';
@@ -178,22 +181,27 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   const box=$('menu-content');
   if(t==='story'){
    const l=getLevel();
-   box.innerHTML='<div class="content-eyebrow">THE MIDNIGHT CIRCUIT / CHAPTER '+l.chapter+'</div><div class="current-chapter">'+l.name+'</div><p>Race <strong>'+l.rival+'</strong> across '+l.subtitle.toLowerCase()+'. Beat your best. Leave a shadow for your next run.</p><div class="menu-wallet">◈ '+save.wallet+' ROUTE CREDITS</div><span class="tier-note">CURRENT LEAGUE: <b>'+tier().label+'</b> · '+tier().description+'</span><br><button data-replay="1" class="text-button">WATCH THE STORY AGAIN</button>';
-   $('start').hidden=false;$('start').textContent=save.storySeen[level]?'RACE '+l.rival.toUpperCase()+'  ↗':'PLAY CHAPTER '+l.chapter+'  ↗';
+   const record=save.bests[level]===null?'—':Number(save.bests[level]).toFixed(1)+'s';
+   box.innerHTML='<div class="chapter-kicker">CHAPTER '+l.chapter+' / ROOFTOP CIRCUIT</div><div class="current-chapter">'+l.name+'</div><div class="hub-rival"><span>VS.</span><strong>'+l.rival.toUpperCase()+'</strong></div><div class="hub-meta"><span>BEST <b>'+record+'</b></span><span>LEAGUE <b>'+tier().label+'</b></span><span>GHOST <b>'+(save.ghosts[level]?'READY':'—')+'</b></span></div>';
+   $('start').hidden=false;$('start').textContent='START RACE  →';
   } else if(t==='races'){
    const tiers='<div class="tier-selector" role="group" aria-label="Rival difficulty">'+TIERS.map((d,i)=>'<button data-tier="'+i+'" class="'+(save.tier===i?'selected':'')+'">'+d.label+' · '+d.payout+'×</button>').join('')+'</div>';
-   box.innerHTML='<div class="content-eyebrow">CIRCUIT / CHOOSE YOUR RIVAL</div>'+tiers+
+   box.innerHTML='<div class="content-eyebrow">CHOOSE YOUR ROUTE</div>'+tiers+
    '<div class="tier-note">Rival pace: <b>'+getRivalSpeed().toFixed(1)+'</b> m/s · Prize multiplier: <b>'+tier().payout+'×</b></div>'+
    '<div class="race-list">'+LEVELS.map((l,i)=>'<button class="race-row '+(i===level?'chosen':'')+'" data-race="'+i+'" '+(!save.unlocked[i]?'disabled':'')+'><span class="race-number">'+l.chapter+'</span><span class="race-copy"><b>'+l.name+'</b><small>'+l.subtitle+' · '+l.rival+' · '+['NO MEDAL','STREET','PRO','ELITE'][save.medals[i]||0]+'</small></span><span class="race-record">'+(save.unlocked[i]?(save.bests[i]===null?'NEW':Number(save.bests[i]).toFixed(1)+'s'):'LOCKED')+'</span></button>').join('')+'</div>'+
    '<div class="future-routes" aria-label="Future districts"><div class="future-route">04 / HARBOR RUN<small>IN DEVELOPMENT · LOCKED</small></div><div class="future-route">05 / OLD RAIL<small>IN DEVELOPMENT · LOCKED</small></div><div class="future-route">06 / NORTHLIGHT<small>IN DEVELOPMENT · LOCKED</small></div></div>';
    $('start').hidden=false;$('start').textContent='RACE '+getLevel().rival.toUpperCase()+'  ↗';
   } else if(t==='upgrades'){
    const upgrades=[{key:'pace',title:'PACE',description:'Higher sprint speed',max:3,cost:55},{key:'spring',title:'SPRING',description:'Stronger takeoff for longer gaps',max:3,cost:55},{key:'grip',title:'GRIP',description:'Sharper air steering',max:3,cost:55}];
-   box.innerHTML='<div class="content-eyebrow">RUNNER WORKSHOP / PERMANENT UPGRADES</div><div class="menu-wallet">◈ '+save.wallet+' ROUTE CREDITS</div>'+upgrades.map(u=>{const lvl=save.upgrades[u.key]||0,cost=u.cost*(lvl+1);return '<div class="upgrade-row"><div><b>'+u.title+' <span class="level-pips">'+('●'.repeat(lvl)+'○'.repeat(u.max-lvl))+'</span></b><small>'+u.description+'</small></div><button data-buy="'+u.key+'" '+(lvl===u.max||save.wallet<cost?'disabled':'')+'>'+(lvl===u.max?'MAX':'◈ '+cost)+'</button></div>'}).join('')+'<div class="menu-hint">Earn credits by finishing races and collecting signals. Upgrades change your own best-time records, not your rivals.</div>';
-   $('start').hidden=false;$('start').textContent='BACK TO THE ROOFS  ↗';
+   box.innerHTML='<div class="content-eyebrow">YOUR WORKSHOP</div><div class="menu-wallet">◈ '+save.wallet+' ROUTE CREDITS</div>'+upgrades.map(u=>{const lvl=save.upgrades[u.key]||0,cost=u.cost*(lvl+1);return '<div class="upgrade-row"><div><b>'+u.title+' <span class="level-pips">'+('●'.repeat(lvl)+'○'.repeat(u.max-lvl))+'</span></b><small>'+u.description+'</small></div><button data-buy="'+u.key+'" '+(lvl===u.max||save.wallet<cost?'disabled':'')+'>'+(lvl===u.max?'MAX':'◈ '+cost)+'</button></div>'}).join('')+'<div class="menu-hint">Earn credits by finishing races and collecting signals. Upgrades change your own best-time records, not your rivals.</div>';
+   $('start').hidden=false;$('start').textContent='START RACE  →';
   } else {
    box.innerHTML='';
    $('start').hidden=false;$('start').textContent='RACE WITH THIS LOOK  ↗';
+  }
+  $('splash').dataset.section=t;
+  if(!window.matchMedia('(prefers-reduced-motion:reduce)').matches){
+   box.animate?.([{opacity:.3,transform:'translate3d(12px,0,0)'},{opacity:1,transform:'translate3d(0,0,0)'}],{duration:180,easing:'cubic-bezier(.2,.8,.2,1)'});
   }
  }
  function selectRace(i){
