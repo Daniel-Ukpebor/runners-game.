@@ -24,10 +24,10 @@ let checkpointIndex=0, best=0, volume=true, audioContext=null, builtLevel=0;
 const route=[], obstacles=[], pickups=[], animated=[], groundShadows=[], speedPads=[], birds=[];
 let environmentArt=null,externalArt=null;
 const radius=0.38, temp=new THREE.Vector3(), targetCamera=new THREE.Vector3(), cameraAim=new THREE.Vector3();
-const state={x:0,y:1,z:-5.5,vx:0,vz:0,vy:0,grounded:true,coyote:0,buffer:0,slide:0,boost:0,runPhase:0,stepTimer:0,angle:0,airTime:0,stuntScore:0,combo:0,comboWindow:0,pendingStunt:0,trick:0,trickUsed:false,vault:0,landing:0,trickType:0};
+const state={x:0,y:1,z:-5.5,vx:0,vz:0,vy:0,grounded:true,coyote:0,buffer:0,slide:0,boost:0,runPhase:0,stepTimer:0,angle:0,airTime:0,stuntScore:0,combo:0,comboWindow:0,pendingStunt:0,trick:0,trickUsed:false,vault:0,landing:0,trickType:0,signalCharges:0};
 const input={x:0,z:0,pointer:null,keys:new Set(),cameraYaw:0,cameraPitch:0,mouseDragging:false,mousePointer:null,mouseLastX:0,mouseLastY:0};
 // Read-only diagnostics for automated mobile control tests.
-window.__runnersDiagnostics=()=>({x:state.x,z:state.z,y:state.y,time:elapsed,grounded:state.grounded,paused,finished,level:systems.getLevel().id,wallet:systems.getWallet(),audio:systems.audioState(),stunts:state.stuntScore,pending:state.pendingStunt,trick:state.trick,vault:state.vault,cinema:!!(cinematic&&cinematic.isActive()),assets:externalArt?.stats()||null});
+window.__runnersDiagnostics=()=>({x:state.x,z:state.z,y:state.y,time:elapsed,grounded:state.grounded,paused,finished,level:systems.getLevel().id,wallet:systems.getWallet(),audio:systems.audioState(),stunts:state.stuntScore,pending:state.pendingStunt,trick:state.trick,vault:state.vault,cinema:!!(cinematic&&cinematic.isActive()),assets:externalArt?.stats()||null,signalCharges:state.signalCharges,boost:state.boost});
 if(location.hostname==='127.0.0.1'||location.hostname==='localhost'){
   window.__runnersTestApi={
     complete:()=>{if(!started)throw Error('No active race');state.z=route.at(-1).z+7.2;state.y=1;state.grounded=true;},
@@ -712,7 +712,7 @@ function goMain(){
 function newRun(){
   if(builtLevel!==systems.levelIndex())rebuildCourse();
   elapsed=0;collected=0;falls=0;finished=false;paused=false;checkpointIndex=0;
-  state.stuntScore=0;state.combo=0;state.comboWindow=0;state.pendingStunt=0;state.trick=0;state.trickUsed=false;state.vault=0;updateStuntHud();
+  state.stuntScore=0;state.combo=0;state.comboWindow=0;state.pendingStunt=0;state.trick=0;state.trickUsed=false;state.vault=0;state.signalCharges=0;updateStuntHud();updatePulseHud();
   obstacles.forEach(o=>{o.hit=0;o.vaulted=false;o.cleared=false;});
   speedPads.forEach(p=>p.used=false);
   birds.forEach(b=>{b.scared=false;b.air=0;b.group.visible=true;b.group.position.copy(b.home);});pickups.forEach(p=>{p.taken=false;p.group.visible=true});
@@ -779,6 +779,23 @@ function performJump(){
   state.slide=0;state.airTime=0;state.trickUsed=false;state.pendingStunt=0;
   sound(420,.13,'triangle',.06);systems.sfx('jump');
 }
+function updatePulseHud(){
+  const pulse=$('pulse');
+  if(!pulse)return;
+  pulse.disabled=state.signalCharges<=0;
+  pulse.textContent='PULSE '+(state.signalCharges||'');
+  pulse.setAttribute('aria-label','Use signal speed burst. '+state.signalCharges+' charges');
+  pulse.classList.toggle('charged',state.signalCharges>0);
+}
+function pulse(){
+  if(!started||paused||finished||state.signalCharges<=0)return;
+  state.signalCharges--;
+  state.boost=Math.max(state.boost,2.8);
+  state.vz=Math.max(state.vz,13.6);
+  updatePulseHud();
+  notify('SIGNAL PULSE · SPEED BURST',1.25);
+  systems.sfx('coin');
+}
 function slide(){
   if(!started||paused||finished)return;
   if(state.grounded){state.slide=.78;state.boost=.22;sound(155,.18,'sawtooth',.023);systems.sfx('slide');}
@@ -803,13 +820,14 @@ function bindControls(){
   stick.addEventListener('pointermove',move);
   const release=e=>{if(input.pointer!==e.pointerId)return;input.pointer=null;input.x=0;input.z=0;thumb.style.transform='translate(0,0)'};
   stick.addEventListener('pointerup',release);stick.addEventListener('pointercancel',release);
-  actionPointer('jump',jump);actionPointer('slide',slide);actionPointer('trick',trick);
+  actionPointer('jump',jump);actionPointer('slide',slide);actionPointer('trick',trick);actionPointer('pulse',pulse);
   addEventListener('keydown',e=>{
     if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyR'].includes(e.code)&&(started||paused||finished))e.preventDefault();
     input.keys.add(e.code);
     if(!e.repeat&&(e.code==='Space'||e.code==='KeyJ'))jump();
     if(!e.repeat&&(e.code==='KeyC'||e.code==='ShiftLeft'))slide();
     if(!e.repeat&&(e.code==='KeyK'||e.code==='KeyF'))trick();
+    if(!e.repeat&&e.code==='KeyQ')pulse();
     if(!e.repeat&&e.code==='KeyR'&&(started||paused||finished)){e.preventDefault();newRun();}
     if(!e.repeat&&e.code==='Escape'&&started&&!finished)togglePause();
   },{passive:false});
@@ -946,7 +964,7 @@ function simulation(dt){
   collide(dt);checkpoint();tickInteractables(dt);
   for(const p of pickups){
     if(!p.taken&&Math.abs(state.x-p.x)<1.25&&Math.abs(state.z-p.z)<1.5&&Math.abs(state.y-1)<1.8){
-      p.taken=true;p.group.visible=false;collected++;notify('SIGNAL FOUND  '+collected+'/5',1.5);sound(910,.19,'sine',.045);systems.sfx('coin');
+      p.taken=true;p.group.visible=false;collected++;state.signalCharges=Math.min(3,state.signalCharges+1);updatePulseHud();notify('SIGNAL CHARGED · '+state.signalCharges+' PULSE'+(state.signalCharges===1?'':'S')+' READY',1.5);sound(910,.19,'sine',.045);systems.sfx('coin');
     }
   }
   systems.track(dt,state,elapsed,started&&!paused&&!finished);
