@@ -1,11 +1,11 @@
-# RUNNERS — The Midnight Circuit (Build 0.4)
+# RUNNERS — The Midnight Circuit (Build 0.5)
 
 A **playable mobile-friendly 3D parkour story game** in the fictional coastal city of **Vesper**, with three linked rooftop races and permanent local progress. This is an evolving vertical slice—not an App Store/native iOS release or a finished commercial game.
 
 **Play:** https://daniel-ukpebor.github.io/runners-game./
 
 
-## Build 0.4: the polish-and-movement pass
+## Build 0.5: the polish-and-movement pass
 
 This release prioritizes the **first 30 seconds** of play over adding more repetitive levels.
 
@@ -18,6 +18,26 @@ This release prioritizes the **first 30 seconds** of play over adding more repet
 - The existing three district tracks, time-trial shadows, upgrade purchases and locally saved chapter unlocks remain intact.
 
 These are **original procedural assets** and short stylized real-time cutscenes. They do not yet match the detailed concept illustration, offer professional motion-captured animations, or create video files. Screen recording a run is available using your device's recording controls.
+
+## Build 0.5 / player-facing improvements
+
+- **Full-screen character studio** with an enlarged rotating 3D preview, masculine and feminine proportions (removed the androgynous option), six hair shapes, five hair colors, six skin tones, five jackets, bag/no-bag, and eyewear/headband choices. These are procedural models, not imported professional character rigs.
+- **Swipeable menu**: Home, Districts, Workshop, Loadout. Horizontal touch swipes and keyboard arrow keys switch menu pages; Back returns from the character studio.
+- **Three rival leagues**: Street, Pro and Elite. Higher league speeds reward higher race-credit payouts. You must beat a rival to unlock the next district; finishing still earns credits.
+- **Future map previews**: Harbor Run, Old Rail, Northlight are visible but locked and marked **in development**. No unbuilt level is represented as playable.
+- **Keyboard R instantly restarts** a race on desktop, while Space jumps/vaults, C slides, K performs an aerial stunt, and M toggles sound.
+- **More tactile city**: glowing optional speed strips and birds that react to runners, plus procedural plaster texture and rooftop tile detail.
+- **More animated characters**: faces on Kai and all three rivals, smoother limbs, softer contact shadows, vault knee-tucks, landing compression and several mid-air trick motions.
+- **In-engine cutscene** still starts each race with the first childhood intro or a shortened replay.
+- No ads or trackers. Current progress remains stored locally in the browser; changing to a different domain (such as Vercel) does not automatically transfer localStorage saves.
+
+### What it still is not
+
+The semi-realistic, high-fidelity character and environment shown in the concept board require a licensed rigged 3D character model, professional animation set, authored architectural assets, animation blending and performance tuning. This is an improved mobile-web vertical slice, **not** a AAA or high-end commercial visual release.
+
+### Publishing on Vercel
+
+RUNNERS already runs on GitHub Pages. To use Vercel, import the existing GitHub repo, select Framework Preset **Other**, leave Build Command blank, and deploy from the repository root. The project does not have a build step, and its static files live at root. The Vercel project/account must be connected separately; no deployment is implied by this repository alone.
 
 ## Chapters and story
 
