@@ -22,6 +22,8 @@ const fs = require('fs');
  if(!init.hasCanvas||init.errorVisible||!init.introVisible)throw Error('Game failed initial render');
  fs.mkdirSync('test-results',{recursive:true});
  await page.screenshot({path:'test-results/runners-title.png'});
+ const startRect=await page.locator('#start').boundingBox();
+ if(!startRect||startRect.y+startRect.height>390)throw Error('START button is not visible in iPhone landscape');
  if(await page.locator('.race-row').count()!==0)throw Error('Race cards should render only on Races tab');
  await page.locator('[data-tab="races"]').click();
  if(await page.locator('.race-row').count()!==3)throw Error('Expected 3 distinct racing chapters');
@@ -31,8 +33,12 @@ const fs = require('fs');
  await page.locator('[data-tab="customize"]').click();
  await page.locator('[data-build="1"]').click();
  await page.locator('[data-hair="4"]').click();
+ await page.locator('[data-haircolor="3"]').click();
+ await page.waitForTimeout(450);
+ await page.screenshot({path:'test-results/runners-customize.png'});
+ if(!(await page.locator('#avatar-preview canvas').count()))throw Error('Live 3D avatar preview failed');
  const style=await page.evaluate(()=>JSON.parse(localStorage.getItem('runners.style')));
- if(style.build!==1||style.hair!==4)throw Error('Runner customization not persisting');
+ if(style.build!==1||style.hair!==4||style.haircolor!==3)throw Error('Runner customization not persisting');
  await page.locator('[data-tab="story"]').click();
  await page.locator('#start').click({timeout:7000});
  await page.locator('#story-overlay:not([hidden])').waitFor();
@@ -86,6 +92,41 @@ const fs = require('fs');
  await page.locator('#start').click();
  await page.waitForTimeout(450);
  if(await page.locator('#story-overlay').isVisible())throw Error('Already watched cutscene played again without being asked');
+ await page.keyboard.down('w');await page.waitForTimeout(600);await page.keyboard.up('w');
+ await page.evaluate(()=>window.__runnersTestApi.complete());
+ await page.waitForFunction(()=>!document.querySelector('#modal').hidden,{timeout:10000});
+ const finishData=await page.evaluate(()=>({
+   wallet:window.__runnersDiagnostics().wallet,
+   title:document.querySelector('#modal-title').textContent,
+   nextUnlocked:!document.querySelector('[data-race="1"]')?.disabled,
+   result:document.querySelector('#modal-text').textContent
+ }));
+ console.log('FINISH REWARDS:',JSON.stringify(finishData));
+ if(finishData.wallet<60||!finishData.result.includes('CREDITS'))throw Error('Finishing did not earn progression rewards');
+ await page.locator('#modal-secondary').click();
+ await page.locator('[data-tab="races"]').click();
+ if(await page.locator('[data-race="1"]').isDisabled())throw Error('Completing chapter 1 failed to unlock chapter 2');
+ await page.locator('[data-tab="upgrades"]').click();
+ await page.locator('[data-buy="pace"]').click();
+ const balance=await page.evaluate(()=>({wallet:window.__runnersDiagnostics().wallet,upgrade:JSON.parse(localStorage.getItem('runners.save.v3')).upgrades.pace}));
+ if(balance.upgrade!==1)throw Error('Upgrade did not persist');
+ await page.locator('[data-tab="races"]').click();
+ await page.locator('[data-race="0"]').click();
+ await page.locator('#start').click();
+ await page.waitForTimeout(300);
+ const ghost=await page.locator('#ghost-indicator').textContent();
+ console.log('REPLAY SHADOW:',ghost);
+ if(!ghost.includes('YOUR SHADOW'))throw Error('Last race shadow replay was not saved');
+ await page.locator('#pause').click();
+ await page.locator('#modal-tertiary').click();
+ await page.locator('[data-tab="races"]').click();
+ await page.locator('[data-race="1"]').click();
+ await page.locator('#start').click();
+ await page.locator('#story-overlay:not([hidden])').waitFor();
+ await page.screenshot({path:'test-results/runners-chapter2.png'});
+ await page.locator('#story-skip').click();
+ if((await page.evaluate(()=>window.__runnersDiagnostics().level))!=='market')throw Error('Chapter 2 race not selected');
+ await page.waitForTimeout(300);
 
  if(errors.length)throw Error('JS runtime error(s): '+errors.join(' | '));
  console.log('SMOKE TEST PASSED: render, start, movement, responsive layout');
