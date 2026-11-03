@@ -1,0 +1,84 @@
+/* RUNNERS DEVICE PASS / desktop input and HUD are not mobile overlays.
+   Keep this stylesheet last, after older layouts. */
+#desktop-hint{display:none;position:fixed;bottom:22px;left:24px;z-index:4;color:#f7e4c9;
+ font:700 10px/1.65 Arial,Helvetica,sans-serif;letter-spacing:.08em;
+ background:rgba(17,28,30,.62);padding:9px 12px;border-left:2px solid #e3aa79;max-width:690px;pointer-events:none}
+#desktop-hint strong{color:#fff7e7;font-weight:900}
+#desktop-hint span{color:#d59a72;padding:0 4px}
+#hud .stats{position:fixed!important;right:148px!important;top:calc(15px + env(safe-area-inset-top))!important;
+ margin:0!important;display:flex!important;gap:16px!important;align-items:flex-start!important}
+#hud .stat-label{font-size:9px!important;letter-spacing:.10em!important}
+#hud .stat-value{font-size:23px!important;line-height:1.05!important}
+#hud .stat-value.small{font-size:13px!important;margin-top:6px!important}
+#pause,#sound-hud{position:fixed!important;z-index:5!important;
+ top:calc(15px + env(safe-area-inset-top))!important;
+ width:43px!important;height:43px!important;border-radius:3px!important;
+ background:rgba(18,29,34,.73)!important;border:1px solid rgba(255,226,192,.5)!important;
+ color:#ffe8ce!important;font-size:17px!important;display:grid;place-content:center;
+ box-shadow:none!important}
+#pause[hidden],#sound-hud[hidden]{display:none!important}
+#pause{right:max(19px,env(safe-area-inset-right))!important}
+#sound-hud{right:calc(max(19px,env(safe-area-inset-right)) + 53px)!important}
+#hud #stunt-hud{
+ position:fixed!important;right:max(24px,env(safe-area-inset-right))!important;
+ bottom:calc(22px + env(safe-area-inset-bottom))!important;
+ top:auto!important;display:flex!important;align-items:baseline!important;gap:8px!important;
+ flex-direction:row!important;letter-spacing:.05em!important
+}
+#hud #stunt-total{font-size:24px!important;color:#ffcb91!important}
+#hud #stunt-combo{font-size:10px!important;color:#fff0d9!important}
+#hud #ghost-indicator{font-size:10px!important;letter-spacing:.11em!important}
+#studio-stage #avatar-preview{pointer-events:auto!important;touch-action:none!important;cursor:grab!important;z-index:1}
+#studio-stage #avatar-preview:active{cursor:grabbing!important}
+#studio-stage #avatar-preview canvas{pointer-events:none!important}
+#studio-stage:before{content:"DRAG KAI TO ROTATE  /  SCROLL TO ZOOM";
+ position:absolute;bottom:24px;left:0;width:100%;z-index:3;pointer-events:none;
+ color:rgba(245,222,196,.85);font:800 10px Arial,sans-serif;letter-spacing:.10em;text-align:center}
+#studio-controls #face-options,#studio-controls #physique-options,#studio-controls #eye-options{display:block}
+#studio-controls #face-options .swatches,#studio-controls #physique-options .swatches{display:flex;flex-wrap:wrap;gap:8px}
+#pulse{pointer-events:auto;position:absolute;
+ width:65px;height:65px;right:calc(max(29px,env(safe-area-inset-right)) + 15px);
+ bottom:calc(165px + env(safe-area-inset-bottom));
+ font-size:10px!important;background:rgba(54,104,111,.87)!important;border-color:#9de6dc!important;
+ transition:transform .12s,opacity .12s}
+#pulse[disabled]{opacity:.34!important;filter:saturate(.35);cursor:default;pointer-events:none}
+#pulse.charged{box-shadow:0 0 11px #62d9cf55!important;color:#eefffd}
+@media (pointer:fine) and (hover:hover){
+ #controls{display:none!important}
+ #desktop-hint:not([hidden]){display:block!important}
+ #hud #stunt-hud{bottom:20px!important}
+}
+@media (pointer:coarse),(hover:none){
+ #desktop-hint{display:none!important}
+ #hud .stats{right:120px!important;top:calc(14px + env(safe-area-inset-top))!important;gap:10px!important}
+ #hud .stat-value{font-size:18px!important}
+ #hud #stunt-hud{top:calc(103px + env(safe-area-inset-top))!important;
+   bottom:auto!important;right:22px!important}
+ #hud #stunt-total{font-size:16px!important}
+ #hud #stunt-combo{font-size:8px!important}
+ #pulse{width:56px;height:56px;
+   right:calc(max(20px,env(safe-area-inset-right)) + 15px);
+   bottom:calc(140px + env(safe-area-inset-bottom))}
+ #studio-stage:before{content:"DRAG TO ROTATE";font-size:9px;bottom:15px}
+}
+@media (orientation:portrait) and (pointer:coarse){
+ #hud .stats{right:122px!important;gap:8px!important}
+ #hud .stats>div:first-child,#hud .stats>div:last-child{display:none!important}
+ #hud #time{font-size:22px!important}
+ #hud #stunt-hud{top:calc(99px + env(safe-area-inset-top))!important;right:20px!important}
+ #pulse{bottom:calc(146px + env(safe-area-inset-bottom));right:27px}
+ #studio-controls .hair-choice{font-size:10px}
+}
+@media (orientation:landscape) and (max-height:540px){
+ #hud .stats{top:calc(9px + env(safe-area-inset-top))!important;right:132px!important}
+ #hud #pause,#pause,#sound-hud{top:calc(10px + env(safe-area-inset-top))!important;width:36px!important;height:36px!important}
+ #sound-hud{right:calc(max(15px,env(safe-area-inset-right)) + 45px)!important}
+ #pause{right:max(15px,env(safe-area-inset-right))!important}
+ #hud #stunt-hud{top:calc(92px + env(safe-area-inset-top))!important;bottom:auto!important}
+ #desktop-hint{bottom:8px;font-size:9px;max-width:610px}
+ #pulse{bottom:calc(128px + env(safe-area-inset-bottom));right:22px;width:52px;height:52px}
+}
+@media (max-width:650px) and (orientation:landscape) {
+ #desktop-hint{font-size:8px;max-width:70vw}
+ #hud .stats>div:first-child{display:none!important}
+}
