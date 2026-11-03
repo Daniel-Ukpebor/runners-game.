@@ -1,8 +1,23 @@
-# RUNNERS — The Midnight Circuit (Build 0.3)
+# RUNNERS — The Midnight Circuit (Build 0.4)
 
 A **playable mobile-friendly 3D parkour story game** in the fictional coastal city of **Vesper**, with three linked rooftop races and permanent local progress. This is an evolving vertical slice—not an App Store/native iOS release or a finished commercial game.
 
 **Play:** https://daniel-ukpebor.github.io/runners-game./
+
+
+## Build 0.4: the polish-and-movement pass
+
+This release prioritizes the **first 30 seconds** of play over adding more repetitive levels.
+
+- **Moving 3D story intro every time you tap Race.** The first play runs the full childhood-to-present prologue; repeat races show a short recap. Intro shots auto-advance and can be skipped. The cutscenes use actual game actors and the selected district, not a separate illustrated slideshow.
+- **New TRICK action** during a jump: perform an aerial roll. Style points are banked only when you land cleanly. A fall or collision loses pending trick points.
+- **Speed vaults**: press JUMP while approaching a crate or low wall at running speed to vault it and earn style points.
+- **Clean slide bonuses** for ducking under beams, plus a limited flow combo multiplier. Style points convert to extra local in-game route credits at the finish.
+- **Smoother low-poly character**: capsule-shaped limbs, finer mesh tessellation, rounded pack, adjusted lighting and soft projected ground shadow.
+- **Customization**: keep the existing build/skin/hair/jacket options, add a backpack/no-backpack gear toggle, and reflect your customized Kai in cinematic shots.
+- The existing three district tracks, time-trial shadows, upgrade purchases and locally saved chapter unlocks remain intact.
+
+These are **original procedural assets** and short stylized real-time cutscenes. They do not yet match the detailed concept illustration, offer professional motion-captured animations, or create video files. Screen recording a run is available using your device's recording controls.
 
 ## Chapters and story
 
