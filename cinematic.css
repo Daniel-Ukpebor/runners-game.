@@ -1,0 +1,98 @@
+/* RUNNERS 0.4 — cinematic treatment and skill HUD.
+   No card shadows, heavy gradients or animated decorative confetti. */
+.story-screen{
+ position:fixed!important;inset:0!important;display:block!important;
+ padding:0!important;overflow:hidden!important;background:transparent!important;
+ touch-action:manipulation!important;z-index:7!important
+}
+.story-screen[hidden]{display:none!important}
+.story-screen:before,.story-screen:after{
+ content:"";position:absolute;left:0;right:0;height:7vh;z-index:0;
+ background:#101719;pointer-events:none
+}
+.story-screen:before{top:0}.story-screen:after{bottom:0}
+.story-screen .story-stage{
+ position:absolute;inset:0;width:100%!important;height:100%!important;
+ min-height:0!important;max-width:none!important;display:block!important;
+ background:linear-gradient(0deg,rgba(14,19,21,.91),rgba(14,19,21,.15) 48%,transparent 69%)!important;
+ border:0!important;box-shadow:none!important;overflow:hidden
+}
+.story-screen .story-dawn{display:none!important}
+.story-screen .story-copy{
+ position:absolute;bottom:calc(8vh + env(safe-area-inset-bottom));left:clamp(22px,5vw,70px);
+ width:min(720px,87vw);height:auto;display:block!important;
+ background:none!important;padding:0!important;
+ text-shadow:0 1px 7px #0009;animation:cinematic-arrive .38s ease-out;
+}
+.story-screen #story-time{font-size:10px;letter-spacing:.19em;color:#ffc693}
+.story-screen .story-location{display:inline-block;margin-left:12px;font-size:9px}
+.story-screen .story-copy h2{
+ font-size:11px!important;font-weight:900;letter-spacing:.13em;
+ color:#ffc693;margin:10px 0 4px!important
+}
+.story-screen #story-dialogue{
+ font-size:clamp(19px,3.2vw,31px)!important;
+ font-weight:800;line-height:1.15!important;
+ margin:0 0 5px!important;max-width:700px;letter-spacing:-.025em
+}
+.story-screen #story-context{
+ font-size:11px!important;line-height:1.34!important;
+ max-width:580px;color:#e8d4bf!important
+}
+.story-screen .story-actions{position:absolute;right:0;bottom:0;display:flex!important;gap:7px;margin:0!important}
+.story-screen #story-next{background:#dba071!important;padding:9px 13px!important;min-height:0!important;box-shadow:none!important;font-size:9px!important}
+.story-screen #story-skip{border-color:#ffffff63;padding:9px 11px!important;font-size:9px!important;min-height:0!important}
+.story-screen #story-step{position:absolute;right:2px;top:0;margin:0!important;color:#e4d4bd}
+.story-screen #story-context{padding-right:145px}
+@keyframes cinematic-arrive{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+.story-screen[data-scene="0"] .story-copy,
+.story-screen[data-scene="1"] .story-copy,
+.story-screen[data-scene="2"] .story-copy,
+.story-screen[data-scene="3"] .story-copy{animation:cinematic-arrive .4s ease-out}
+#trick{
+ position:absolute;right:calc(max(29px,env(safe-area-inset-right)) + 220px);
+ bottom:calc(46px + env(safe-area-inset-bottom));
+ width:68px;height:68px;font-size:11px;
+ background:rgba(29,43,48,.82);
+ border-color:rgba(250,201,150,.8);
+}
+#trick:before{content:"✦";display:block;margin-bottom:3px;font-size:13px;color:#e7b889}
+#trick.pressed{background:#e6a66f;color:#182126}
+#stunt-hud{
+ position:absolute;right:0;top:77px;pointer-events:none;text-align:right;
+ display:flex;align-items:baseline;gap:8px;text-shadow:0 2px 4px #000a;
+}
+#stunt-total{font-size:17px;font-variant-numeric:tabular-nums;letter-spacing:.08em;color:#ffc588}
+#stunt-combo{font-size:8px;font-weight:900;letter-spacing:.15em;color:#fff6d8}
+#splash:not([hidden]){animation:menu-fade .18s ease-out}
+#modal:not([hidden]){animation:menu-fade .17s ease-out}
+@keyframes menu-fade{from{opacity:.7}to{opacity:1}}
+#splash #menu-nav button,#splash .hair-choice{transition:background-color .12s,color .12s}
+#hud .bottom-meta{min-height:17px}
+@media (orientation:landscape) and (max-height:520px){
+ .story-screen .story-copy{
+  bottom:calc(8vh + env(safe-area-inset-bottom) + 7px);
+  width:min(690px,89vw);
+ }
+ .story-screen #story-dialogue{font-size:21px!important;margin-bottom:3px!important}
+ .story-screen #story-context{font-size:10px!important}
+ .story-screen .story-copy h2{margin:6px 0 3px!important}
+ .story-screen #story-time{font-size:9px}
+ .story-screen .story-location{font-size:8px}
+ #trick{right:calc(max(26px,env(safe-area-inset-right)) + 216px);bottom:calc(28px + env(safe-area-inset-bottom));width:62px;height:62px}
+ #stunt-hud{top:78px}
+}
+@media (orientation:portrait){
+ .story-screen .story-copy{left:20px;bottom:calc(9vh + env(safe-area-inset-bottom) + 8px);width:calc(100% - 40px)}
+ .story-screen #story-dialogue{font-size:23px!important}
+ .story-screen #story-context{font-size:11px!important;padding-right:0;margin-bottom:56px}
+ .story-screen .story-actions{bottom:-2px;left:0;right:auto}
+ .story-screen #story-step{right:0;top:0}
+ #trick{right:126px;bottom:calc(136px + env(safe-area-inset-bottom));width:57px;height:57px}
+ #stunt-hud{top:99px;right:0}
+ #stunt-total{font-size:14px}
+ #stunt-combo{font-size:7px}
+}
+@media(prefers-reduced-motion:reduce){
+ .story-screen .story-copy,#splash:not([hidden]),#modal:not([hidden]){animation:none!important}
+}
