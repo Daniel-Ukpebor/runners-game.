@@ -25,7 +25,7 @@ const route=[], obstacles=[], pickups=[], animated=[], groundShadows=[], speedPa
 let environmentArt=null,externalArt=null;
 const radius=0.38, temp=new THREE.Vector3(), targetCamera=new THREE.Vector3(), cameraAim=new THREE.Vector3();
 const state={x:0,y:1,z:-5.5,vx:0,vz:0,vy:0,grounded:true,coyote:0,buffer:0,slide:0,boost:0,runPhase:0,stepTimer:0,angle:0,airTime:0,stuntScore:0,combo:0,comboWindow:0,pendingStunt:0,trick:0,trickUsed:false,vault:0,landing:0,trickType:0};
-const input={x:0,z:0,pointer:null,keys:new Set()};
+const input={x:0,z:0,pointer:null,keys:new Set(),cameraYaw:0,cameraPitch:0,mouseDragging:false,mousePointer:null,mouseLastX:0,mouseLastY:0};
 // Read-only diagnostics for automated mobile control tests.
 window.__runnersDiagnostics=()=>({x:state.x,z:state.z,y:state.y,time:elapsed,grounded:state.grounded,paused,finished,level:systems.getLevel().id,wallet:systems.getWallet(),audio:systems.audioState(),stunts:state.stuntScore,pending:state.pendingStunt,trick:state.trick,vault:state.vault,cinema:!!(cinematic&&cinematic.isActive()),assets:externalArt?.stats()||null});
 if(location.hostname==='127.0.0.1'||location.hostname==='localhost'){
@@ -698,7 +698,8 @@ function goMain(){
   state.vx=state.vz=state.vy=0;
   ui.toast.classList.remove('visible');
   if(rival)rival.visible=false;
-  $('sound-hud').hidden=true;
+  $('sound-hud').hidden=true;$('desktop-hint').hidden=true;
+  if(document.pointerLockElement)document.exitPointerLock?.();
   systems.showMenu();
 }
 function newRun(){
@@ -710,6 +711,7 @@ function newRun(){
   birds.forEach(b=>{b.scared=false;b.air=0;b.group.visible=true;b.group.position.copy(b.home);});pickups.forEach(p=>{p.taken=false;p.group.visible=true});
   resetPosition(0);started=true;ui.splash.hidden=true;ui.modal.hidden=true;if(rival)rival.visible=true;
   ui.hud.hidden=false;ui.controls.hidden=false;ui.pause.hidden=false;$('sound-hud').hidden=false;
+  $('desktop-hint').hidden=false;input.cameraYaw=0;input.cameraPitch=0;
   ui.pause.setAttribute('aria-label','Pause game');
   systems.beforeRun();
   ui.modal.dataset.action='restart';
@@ -805,6 +807,30 @@ function bindControls(){
     if(!e.repeat&&e.code==='Escape'&&started&&!finished)togglePause();
   },{passive:false});
   addEventListener('keyup',e=>input.keys.delete(e.code));
+  // Separate desktop camera interaction from mobile joystick.
+  // Drag on the 3D canvas to orbit Kai; double-click to lock the mouse if supported.
+  const canvas=renderer.domElement;
+  canvas.addEventListener('contextmenu',e=>e.preventDefault());
+  canvas.addEventListener('pointerdown',e=>{
+    if(!matchMedia('(pointer:fine)').matches||!started||paused||finished)return;
+    if(e.button!==0&&e.button!==2)return;
+    input.mouseDragging=true;input.mousePointer=e.pointerId;
+    input.mouseLastX=e.clientX;input.mouseLastY=e.clientY;
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove',e=>{
+    if(!started||paused||finished)return;
+    const locked=document.pointerLockElement===canvas;
+    if(!locked&&(!input.mouseDragging||input.mousePointer!==e.pointerId))return;
+    const dx=locked?e.movementX:e.clientX-input.mouseLastX;
+    const dy=locked?e.movementY:e.clientY-input.mouseLastY;
+    input.mouseLastX=e.clientX;input.mouseLastY=e.clientY;
+    input.cameraYaw=clamp(input.cameraYaw+dx*.0039,-.68,.68);
+    input.cameraPitch=clamp(input.cameraPitch+dy*.006,-.60,.55);
+  });
+  const stopMouse=e=>{if(input.mousePointer===e.pointerId){input.mouseDragging=false;input.mousePointer=null;}};
+  canvas.addEventListener('pointerup',stopMouse);canvas.addEventListener('pointercancel',stopMouse);
+  canvas.addEventListener('dblclick',()=>{if(started&&!paused&&matchMedia('(pointer:fine)').matches)canvas.requestPointerLock?.();});
   ui.start.addEventListener('click',()=>systems.startStory());
   ui.pause.addEventListener('click',togglePause);
   $('retry').addEventListener('click',newRun);
@@ -857,6 +883,7 @@ function checkpoint(){
 }
 function finish(){
   finished=true;started=false;ui.controls.hidden=true;ui.pause.hidden=true;
+  $('desktop-hint').hidden=true;if(document.pointerLockElement)document.exitPointerLock?.();
   $('sound-hud').hidden=true;
   const benchmark=(route.at(-1).z+11.5)/systems.getRivalSpeed();
   const beat=elapsed<benchmark;
@@ -986,8 +1013,9 @@ function frame(now){
      targetCamera.set(state.x-4.9+Math.sin(now*.00022)*.45,state.y+4.2,state.z-12.8);
      cameraAim.set(state.x+.55,state.y+2.0,state.z+16);
    }else{
-     targetCamera.set(state.x*.82,state.y+up,state.z-back);
-     cameraAim.set(state.x*.95,state.y+(narrow?1.3:1.2),state.z+ahead);
+     const yaw=input.cameraYaw,cos=Math.cos(yaw),sin=Math.sin(yaw);
+     targetCamera.set(state.x*.94-sin*back,state.y+up+input.cameraPitch*2.9,state.z-cos*back);
+     cameraAim.set(state.x+sin*ahead*.66,state.y+(narrow?1.3:1.2)-input.cameraPitch*.75,state.z+cos*ahead);
    }
    camera.position.lerp(targetCamera,1-Math.exp(-(menuOpen?1.8:5.7)*dt));
    camera.lookAt(cameraAim);
