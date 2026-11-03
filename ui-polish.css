@@ -76,3 +76,7 @@ body:has(#story-overlay:not([hidden])) :is(#modal,#splash,#hud,#controls,#pause,
 
 @media(orientation:landscape) and (max-height:520px){#studio-back{top:13px;right:calc(44% + 16px);}}
 @media(orientation:portrait){#studio-back{right:20px;top:18px;}}
+
+/* Header-level Back must receive taps; studio.css disables header pointer events for the title. */
+#studio-stage .studio-head{pointer-events:auto!important}
+#studio-stage #studio-back{pointer-events:auto!important;position:relative;z-index:20;cursor:pointer}
