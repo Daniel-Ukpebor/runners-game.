@@ -205,6 +205,21 @@ const fs = require('fs');
  if(await page.locator('#error').isVisible())throw Error('Nightline render crashed');
  await page.screenshot({path:'test-results/runners-nightline.png'});
 
+ // School-computer smoke test: real desktop layout, menu and 3D loadout.
+ const desktop=await browser.newPage({viewport:{width:1366,height:768},deviceScaleFactor:1});
+ desktop.on('pageerror',e=>errors.push('Desktop: '+String(e)));
+ await desktop.goto('http://127.0.0.1:8765/',{waitUntil:'load'});
+ await desktop.waitForTimeout(1800);
+ if(!(await desktop.locator('#splash').isVisible()))throw Error('Desktop home screen did not render');
+ await desktop.screenshot({path:'test-results/runners-desktop-home.png'});
+ await desktop.locator('[data-tab="races"]').click();
+ if((await desktop.locator('[data-tier]').count())!==3)throw Error('Desktop rival tiers missing');
+ await desktop.locator('[data-tab="customize"]').click();
+ await desktop.locator('#avatar-preview canvas').waitFor({state:'visible'});
+ await desktop.screenshot({path:'test-results/runners-desktop-loadout.png'});
+ await desktop.locator('#studio-back').click();
+ if((await desktop.locator('#menu-nav [data-tab="story"]').getAttribute('class'))!=='nav-active')throw Error('Desktop character studio exit failed');
+ await desktop.close();
  if(errors.length)throw Error('JS runtime error(s): '+errors.join(' | '));
  console.log('SMOKE TEST PASSED: render, start, movement, responsive layout');
  await browser.close();
