@@ -47,7 +47,7 @@ function loadSave(){
 }
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}){
- let save=loadSave(),level=0,tab='story',scene=null,ghost=null,ghostFrame=[],ghostIndex=0,record=[],lastRecord=-1,cutsceneIndex=0,cutsceneTimer=null,audio=null,master=null,audioStep=0,nextBeat=0,active=false,audioEnabled=false,previewRenderer=null,previewScene=null,previewAvatar=null,previewCamera=null,previewClock=0;
+ let save=loadSave(),level=0,tab='story',scene=null,ghost=null,ghostFrame=[],ghostIndex=0,record=[],lastRecord=-1,cutsceneIndex=0,cutsceneTimer=null,audio=null,master=null,audioStep=0,nextBeat=0,active=false,audioEnabled=false,previewRenderer=null,previewScene=null,previewAvatar=null,previewCamera=null,previewClock=0,previewYaw=.4,previewZoom=3.75,previewDrag=null,previewStill=0;
  const $=id=>document.getElementById(id);
  const persist=()=>{try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch(e){console.warn('RUNNERS save could not be stored',e)}};
  const getLevel=()=>LEVELS[level];
@@ -89,6 +89,17 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   const preview=document.createElement('div');preview.id='avatar-preview';preview.hidden=true;
   first.insertAdjacentElement('afterend',build);
   first.insertAdjacentElement('afterend',preview);
+  const shape=document.createElement('section');shape.id='face-options';
+  shape.innerHTML='<div class="custom-label">FACE SHAPE</div><div class="swatches"><button class="hair-choice" data-face="0">ROUND</button><button class="hair-choice" data-face="1">BALANCED</button><button class="hair-choice" data-face="2">DEFINED</button></div>';
+  build.insertAdjacentElement('afterend',shape);
+  const frame=document.createElement('section');frame.id='physique-options';
+  frame.innerHTML='<div class="custom-label">PHYSIQUE</div><div class="swatches"><button class="hair-choice" data-physique="0">LEAN</button><button class="hair-choice" data-physique="1">ATHLETIC</button><button class="hair-choice" data-physique="2">STRONG</button></div>';
+  shape.insertAdjacentElement('afterend',frame);
+  const eye=document.createElement('section');eye.id='eye-options';
+  eye.innerHTML='<div class="custom-label">EYE COLOR</div><div class="swatches"><button class="swatch" aria-label="Brown eyes" data-eyecolor="0" style="background:#332b28"></button><button class="swatch" aria-label="Hazel eyes" data-eyecolor="1" style="background:#786642"></button><button class="swatch" aria-label="Gray-blue eyes" data-eyecolor="2" style="background:#6d8993"></button></div>';
+  frame.insertAdjacentElement('afterend',eye);
+  preview.title='Drag to rotate Kai. Scroll or pinch to zoom.';
+  preview.setAttribute('aria-label','Interactive 3D runner preview: drag to rotate and scroll to zoom');
   const hairs=aside.querySelector('[data-hair="2"]');
   hairs.insertAdjacentHTML('afterend','<button class="hair-choice" data-hair="3">AFRO</button><button class="hair-choice" data-hair="4">BRAIDS</button><button class="hair-choice" data-hair="5">LOCS</button>');
   const hairSwatches=document.createElement('div');hairSwatches.innerHTML='<div class="custom-label">HAIR COLOR</div><div class="swatches"><button class="swatch hair-swatch" data-haircolor="0" aria-label="Black hair" style="background:#222428"></button><button class="swatch hair-swatch" data-haircolor="1" aria-label="Brown hair" style="background:#443128"></button><button class="swatch hair-swatch" data-haircolor="2" aria-label="Auburn hair" style="background:#744329"></button><button class="swatch hair-swatch" data-haircolor="3" aria-label="Blonde hair" style="background:#be9063"></button><button class="swatch hair-swatch" data-haircolor="4" aria-label="Burgundy hair" style="background:#8b3142"></button></div>';
@@ -381,13 +392,33 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
    const w=Math.max(275,Math.min(530,Math.round(innerWidth*.46)));
    const h=Math.max(210,Math.min(440,Math.round(innerHeight*.80)));
    previewCamera=new THREE.PerspectiveCamera(35,w/h,.1,100);
-   previewCamera.position.set(2.85,2.0,4.2);previewCamera.lookAt(0,.77,0);
+   previewCamera.position.set(0,1.56,previewZoom);previewCamera.lookAt(0,.85,0);
    previewRenderer=new THREE.WebGLRenderer({alpha:true,antialias:false,powerPreference:'low-power'});
    previewRenderer.setPixelRatio(1);
    previewRenderer.setPixelRatio(Math.min(devicePixelRatio,1.25));
    previewRenderer.setSize(w,h,false);
    previewRenderer.setClearColor(0x000000,0);
-   $('avatar-preview').appendChild(previewRenderer.domElement);
+   const host=$('avatar-preview');host.appendChild(previewRenderer.domElement);
+   host.addEventListener('pointerdown',e=>{
+     previewDrag={id:e.pointerId,x:e.clientX,y:e.clientY};
+     previewStill=5;
+     host.setPointerCapture(e.pointerId);
+   });
+   host.addEventListener('pointermove',e=>{
+     if(!previewDrag||previewDrag.id!==e.pointerId)return;
+     previewYaw+=(e.clientX-previewDrag.x)*.011;
+     previewDrag.x=e.clientX;previewDrag.y=e.clientY;
+     previewStill=6;
+     if(previewAvatar)previewAvatar.rotation.y=previewYaw;
+   });
+   const release=e=>{if(previewDrag?.id===e.pointerId)previewDrag=null};
+   host.addEventListener('pointerup',release);host.addEventListener('pointercancel',release);
+   host.addEventListener('wheel',e=>{
+     e.preventDefault();
+     previewZoom=clamp(previewZoom+e.deltaY*.003,2.4,5.6);
+     previewCamera.position.z=previewZoom;
+     previewStill=6;
+   },{passive:false});
    refreshAvatar();
   }catch(e){console.warn('3D preview unavailable',e);$('avatar-preview').textContent='Outfit preview unavailable on this browser.';}
  }
@@ -395,7 +426,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   if(!previewScene||!previewRenderer)return;
   if(previewAvatar)previewScene.remove(previewAvatar);
   previewAvatar=getRunner().clone(true);
-  previewAvatar.rotation.y=.4;
+  previewAvatar.rotation.y=previewYaw;
   previewScene.add(previewAvatar);
   previewRenderer.render(previewScene,previewCamera);
  }
@@ -403,7 +434,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   if(!previewRenderer||!previewAvatar||tab!=='customize'||$('splash').hidden)return;
   previewClock+=dt;
   if(previewClock<1/25)return;
-  previewAvatar.rotation.y+=previewClock*.3;
+  if(previewStill>0)previewStill=Math.max(0,previewStill-previewClock);else{previewYaw+=previewClock*.16;previewAvatar.rotation.y=previewYaw;}
   previewClock=0;
   previewRenderer.render(previewScene,previewCamera);
  }
