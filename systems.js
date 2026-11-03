@@ -34,8 +34,8 @@ function loadSave(){
  return x;
 }
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-export function createSystems({THREE,getScene,onLaunch,onMenu,onStyle}){
- let save=loadSave(),level=0,tab='story',scene=null,ghost=null,ghostFrame=[],ghostIndex=0,record=[],lastRecord=-1,cutsceneIndex=0,audio=null,master=null,audioStep=0,nextBeat=0,active=false,audioEnabled=false;
+export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}){
+ let save=loadSave(),level=0,tab='story',scene=null,ghost=null,ghostFrame=[],ghostIndex=0,record=[],lastRecord=-1,cutsceneIndex=0,audio=null,master=null,audioStep=0,nextBeat=0,active=false,audioEnabled=false,previewRenderer=null,previewScene=null,previewAvatar=null,previewCamera=null,previewClock=0;
  const $=id=>document.getElementById(id);
  const persist=()=>{try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch(e){console.warn('RUNNERS save could not be stored',e)}};
  const getLevel=()=>LEVELS[level];
@@ -60,6 +60,8 @@ export function createSystems({THREE,getScene,onLaunch,onMenu,onStyle}){
   const select=document.createElement('nav');select.id='menu-nav';select.setAttribute('aria-label','Game menu');
   select.innerHTML='<button data-tab="story" class="nav-active">STORY</button><button data-tab="races">RACES</button><button data-tab="upgrades">UPGRADES</button><button data-tab="customize">CUSTOMIZE</button>';
   menu.insertBefore(select,title);
+  // Put START at the top of the menu; it must be visible without scrolling in landscape.
+  menu.insertBefore($('start'),title);
   const content=document.createElement('div');content.id='menu-content';menu.insertBefore(content,menu.querySelector('.featureline'));
   menu.querySelector('.meta').textContent='BUILD 0.3 · Your progress, upgrades and best-run ghosts are saved on this device. Open in Safari for landscape and audio.';
   const aside=$('splash').querySelector('.customize');
@@ -67,13 +69,19 @@ export function createSystems({THREE,getScene,onLaunch,onMenu,onStyle}){
   const build=document.createElement('div');
   build.innerHTML='<div class="custom-label">BODY / GENDER PRESENTATION</div><div class="swatches build-options"><button class="hair-choice" data-build="0">MASCULINE</button><button class="hair-choice" data-build="1">FEMININE</button><button class="hair-choice" data-build="2">ANDROGYNOUS</button></div><div class="custom-subnote">All styles, outfits and abilities are available to every runner.</div>';
   const first=aside.querySelector('.custom-title');
+  const preview=document.createElement('div');preview.id='avatar-preview';preview.hidden=true;
   first.insertAdjacentElement('afterend',build);
+  first.insertAdjacentElement('afterend',preview);
   const hairs=aside.querySelector('[data-hair="2"]');
   hairs.insertAdjacentHTML('afterend','<button class="hair-choice" data-hair="3">AFRO</button><button class="hair-choice" data-hair="4">BRAIDS</button><button class="hair-choice" data-hair="5">LOCS</button>');
+  const hairSwatches=document.createElement('div');hairSwatches.innerHTML='<div class="custom-label">HAIR COLOR</div><div class="swatches"><button class="swatch hair-swatch" data-haircolor="0" aria-label="Black hair" style="background:#222428"></button><button class="swatch hair-swatch" data-haircolor="1" aria-label="Brown hair" style="background:#443128"></button><button class="swatch hair-swatch" data-haircolor="2" aria-label="Auburn hair" style="background:#744329"></button><button class="swatch hair-swatch" data-haircolor="3" aria-label="Blonde hair" style="background:#be9063"></button><button class="swatch hair-swatch" data-haircolor="4" aria-label="Burgundy hair" style="background:#8b3142"></button></div>';
+  hairs.closest('.swatches').insertAdjacentElement('afterend',hairSwatches);
   const oldSkin=['#e0ad87','#c18b66','#9c674c','#633e32','#efc7a6','#8e5b46'];
   const newSkin=['#edc7a5','#d8a47b','#b77c58','#89583e','#573728','#c99169'];
   aside.querySelectorAll('[data-skin]').forEach((b,i)=>b.style.background=newSkin[i]);
   $('sound').textContent=save.muted?'SOUND OFF':'SOUND ON';
+  $('sound').classList.add('menu-audio');first.insertAdjacentElement('beforebegin',$('sound'));
+  $('sound-hud').textContent=save.muted?'♪̸':'♫';
   const hudMeta=$('hud').querySelector('.bottom-meta');
   hudMeta.firstElementChild.id='race-label';
   const readout=hudMeta.lastElementChild;
@@ -103,6 +111,8 @@ export function createSystems({THREE,getScene,onLaunch,onMenu,onStyle}){
   tab=t;
   document.querySelectorAll('#menu-nav [data-tab]').forEach(b=>b.classList.toggle('nav-active',b.dataset.tab===t));
   $('customize-panel').classList.toggle('customize-focused',t==='customize');
+  $('avatar-preview').hidden=t!=='customize';
+  if(t==='customize')ensurePreview();
   $('menu-content').hidden=t==='customize';
   const box=$('menu-content');
   if(t==='story'){
@@ -265,6 +275,40 @@ export function createSystems({THREE,getScene,onLaunch,onMenu,onStyle}){
   if(name==='finish'){chime(660,.21,.055);chime(990,.3,.03,'sine',audio?audio.currentTime+.17:undefined);}
   else chime(note,name==='hit'?.21:.12,name==='hit'?.054:.027,name==='hit'?'sawtooth':'sine');
  }
+
+ function ensurePreview(){
+  if(previewRenderer)return;
+  try{
+   previewScene=new THREE.Scene();
+   previewScene.add(new THREE.HemisphereLight(0xffe9db,0x354756,2.35));
+   const lamp=new THREE.DirectionalLight(0xffc18d,2.3);lamp.position.set(3,5,5);previewScene.add(lamp);
+   previewCamera=new THREE.PerspectiveCamera(39,250/180,.1,100);
+   previewCamera.position.set(2.8,1.85,3.75);previewCamera.lookAt(0,.52,0);
+   previewRenderer=new THREE.WebGLRenderer({alpha:true,antialias:false,powerPreference:'low-power'});
+   previewRenderer.setPixelRatio(1);
+   previewRenderer.setSize(250,180,false);
+   previewRenderer.setClearColor(0x000000,0);
+   $('avatar-preview').appendChild(previewRenderer.domElement);
+   refreshAvatar();
+  }catch(e){console.warn('3D preview unavailable',e);$('avatar-preview').textContent='Outfit preview unavailable on this browser.';}
+ }
+ function refreshAvatar(){
+  if(!previewScene||!previewRenderer)return;
+  if(previewAvatar)previewScene.remove(previewAvatar);
+  previewAvatar=getRunner().clone(true);
+  previewAvatar.rotation.y=.4;
+  previewScene.add(previewAvatar);
+  previewRenderer.render(previewScene,previewCamera);
+ }
+ function drawPreview(dt){
+  if(!previewRenderer||!previewAvatar||tab!=='customize'||$('splash').hidden)return;
+  previewClock+=dt;
+  if(previewClock<1/25)return;
+  previewAvatar.rotation.y+=previewClock*.3;
+  previewClock=0;
+  previewRenderer.render(previewScene,previewCamera);
+ }
+
  function cycleSoundButton(){
   $('sound-hud')?.addEventListener('click',toggleAudio);
   document.addEventListener('keydown',e=>{if(e.code==='KeyM'&&!e.repeat)toggleAudio()});
@@ -276,6 +320,6 @@ export function createSystems({THREE,getScene,onLaunch,onMenu,onStyle}){
   init,getLevel,levelIndex:()=>level,coursePositions:()=>getLevel().positions,courseHazards:()=>getLevel().hazards,
   startStory,showMenu,beforeRun,track,afterFinish,getUpgrade,unlockSound,toggleAudio,sfx,
   getBest:()=>save.bests[level],getWallet:()=>save.wallet,isMuted:()=>save.muted,
-  setRace:selectRace,refresh:()=>{setTab(tab);updateHud()}
+  setRace:selectRace,refresh:()=>{setTab(tab);updateHud()},refreshAvatar,drawPreview
  };
 }
