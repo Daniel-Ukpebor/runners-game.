@@ -108,3 +108,4 @@
 #studio-stage .studio-head{margin:12px 20px!important}
 @media(orientation:portrait){#customize-panel.customize-focused{padding-top:48px!important}#studio-categories{height:48px;gap:0}#studio-categories button{padding:10px 8px}}
 #studio-stage #avatar-preview:after{content:none!important}
+#customize-panel #studio-stage:before{content:none!important}
