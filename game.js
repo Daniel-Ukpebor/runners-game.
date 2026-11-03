@@ -15,7 +15,7 @@ const ui = {
 const isTouch = matchMedia('(pointer:coarse)').matches;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const THREE_COLOR = 0x232323;
-let renderer, camera, scene, world, actor, runner, rival, rivalArms=[], rivalLegs=[], runClock=0, started=false, paused=false;
+let renderer, camera, scene, world, actor, runner, rival, rivalArms=[], rivalLegs=[], skyDomeMaterial, keySun, skyHem, runClock=0, started=false, paused=false;
 let startAt=0, elapsed=0, finished=false, collected=0, falls=0, feedbackUntil=0, flashUntil=0;
 let checkpointIndex=0, best=0, volume=true, audioContext=null, builtLevel=0;
 const route=[], obstacles=[], pickups=[], animated=[], groundShadows=[];
@@ -67,10 +67,10 @@ function boot() {
 
   // Painted-sky dome: evening amber at the horizon, deep slate overhead.
   const skydome=new THREE.Mesh(new THREE.SphereGeometry(185,24,14),new THREE.ShaderMaterial({
-    side:THREE.BackSide,depthWrite:false,fog:false,
+    side:THREE.BackSide,depthWrite:false,fog:false,uniforms:{uNight:{value:0}},
     vertexShader:'varying vec3 vSky;void main(){vSky=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
-    fragmentShader:'varying vec3 vSky;void main(){float h=normalize(vSky).y;float t=smoothstep(-0.46,0.22,h);vec3 horizon=vec3(0.96,0.68,0.53);vec3 high=vec3(0.37,0.55,0.68);gl_FragColor=vec4(mix(horizon,high,t),1.0);}'
-  }));scene.add(skydome);
+    fragmentShader:'uniform float uNight;varying vec3 vSky;void main(){float h=normalize(vSky).y;float t=smoothstep(-0.46,0.22,h);vec3 horizon=mix(vec3(0.96,0.68,0.53),vec3(0.28,0.33,0.45),uNight);vec3 high=mix(vec3(0.37,0.55,0.68),vec3(0.08,0.17,0.31),uNight);gl_FragColor=vec4(mix(horizon,high,t),1.0);}'
+  }));skyDomeMaterial=skydome.material;scene.add(skydome);
   world=new THREE.Group();scene.add(world);
   camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.08,215);
   renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance',alpha:false});
@@ -81,11 +81,11 @@ function boot() {
   renderer.setSize(innerWidth,innerHeight);
   renderer.domElement.setAttribute('aria-label','RUNNERS 3D rooftop course');
   ui.scene.appendChild(renderer.domElement);
-  scene.add(new THREE.HemisphereLight(0xf6e5d5,0x51596b,1.75));
-  const sun=new THREE.DirectionalLight(0xffbd84,2.55);sun.position.set(-34,45,70);scene.add(sun);
+  skyHem=new THREE.HemisphereLight(0xf6e5d5,0x51596b,1.75);scene.add(skyHem);
+  keySun=new THREE.DirectionalLight(0xffbd84,2.55);keySun.position.set(-34,45,70);scene.add(keySun);
   const ambient=new THREE.DirectionalLight(0xd5dfea,.55);ambient.position.set(20,20,-20);scene.add(ambient);
   ball(scene,-65,33,148,9,9,1,mat(0xffd3a0,.65));
-  buildDistrict();optimizeDistrict();makeCharacter();makeRival();applyStyle();systems.init();bindControls();resize();
+  buildDistrict();optimizeDistrict();makeCharacter();makeRival();tuneDistrict();applyStyle();systems.init();bindControls();resize();
   ui.best.textContent=systems.getBest()===null?'—':Number(systems.getBest()).toFixed(1)+'s';
   camera.position.set(0,5,-15);
   cameraAim.set(0,1,6);
@@ -345,10 +345,10 @@ function makeCharacter(){
 function makeRival(){
   rival=new THREE.Group();scene.add(rival);
   const trunk=new THREE.Group();rival.add(trunk);
-  tube(trunk,0,.68,0,.29,.9,.27,0x4f5d62);
+  const rivalTorso=tube(trunk,0,.68,0,.29,.9,.27,0x4f5d62);
   tube(trunk,0,.16,0,.29,.22,.25,0x2d353d);
-  ball(trunk,0,1.47,.035,.26,.32,.26,0xa27359);
-  ball(trunk,0,1.78,-.01,.27,.16,.27,0x202629);
+  const rivalFace=ball(trunk,0,1.47,.035,.26,.32,.26,0xa27359);
+  const rivalHair=ball(trunk,0,1.78,-.01,.27,.16,.27,0x202629);
   for(const side of [-1,1]){
     const a=new THREE.Group();a.position.set(side*.34,1.03,0);trunk.add(a);
     tube(a,0,-.29,0,.14,.63,.14,0x52616b);
@@ -360,10 +360,36 @@ function makeRival(){
     rivalLegs.push(l);
   }
   // Riven's mustard scarf makes their silhouette identifiable in motion.
-  block(trunk,0,1.18,-.05,.65,.13,.34,0xd8a567);
+  const scarf=block(trunk,0,1.18,-.05,.65,.13,.34,0xd8a567);
   const tail=block(trunk,.23,1.1,-.31,.15,.5,.08,0xd8a567);tail.rotation.z=.2;
-  rival.userData.trunk=trunk;rival.visible=false;
+  const bun=ball(trunk,0,1.76,-.21,.22,.22,.22,0x25252b);
+  const visor=block(trunk,0,1.67,.26,.44,.075,.15,0xa9dbdf);
+  rival.userData.trunk=trunk;rival.userData.look={torso:rivalTorso,face:rivalFace,hair:rivalHair,scarf,tail,bun,visor};
+  rival.visible=false;dressRival();
 }
+function dressRival(){
+  if(!rival)return;
+  const kind=systems.levelIndex(),looks=[
+   {jacket:0x4f5d62,skin:0xa27359,hair:0x202629,accent:0xd8a567},
+   {jacket:0x5d4b68,skin:0xc58a66,hair:0x26232c,accent:0xacc3a0},
+   {jacket:0x33424b,skin:0x976d57,hair:0x19252a,accent:0xe38d71}
+  ],l=looks[kind],v=rival.userData.look;
+  v.torso.material=mat(l.jacket);v.face.material=mat(l.skin);
+  v.hair.material=mat(l.hair);v.scarf.material=mat(l.accent);v.tail.material=mat(l.accent);
+  v.bun.material=mat(l.hair);v.bun.visible=kind===1;
+  v.visor.visible=kind===2;
+  rivalArms.forEach(arm=>{arm.children[0].material=mat(l.jacket);arm.children[1].material=mat(l.skin);});
+  rival.scale.set(kind===1?.92:kind===2?1.06:1,kind===1?.97:kind===2?1.06:1,1);
+}
+function tuneDistrict(){
+  const kind=systems.levelIndex(),night=kind===2?.88:kind===1?.36:0;
+  skyDomeMaterial.uniforms.uNight.value=night;
+  scene.fog.color.setHex(kind===2?0x4d5365:kind===1?0xb19d92:0xbbaea6);
+  keySun.intensity=kind===2?1.15:kind===1?2.1:2.55;
+  skyHem.intensity=kind===2?1.35:kind===1?1.65:1.75;
+  renderer.toneMappingExposure=kind===2?1.03:kind===1?1.15:1.17;
+}
+
 function updateRival(dt){
   if(!rival)return;
   rival.visible=started||finished;
@@ -487,7 +513,7 @@ function resetPosition(point=0){
 function rebuildCourse(){
   world.clear();route.length=0;obstacles.length=0;pickups.length=0;animated.length=0;
   seed=93519+systems.levelIndex()*612;
-  buildDistrict();optimizeDistrict();builtLevel=systems.levelIndex();
+  buildDistrict();optimizeDistrict();builtLevel=systems.levelIndex();tuneDistrict();dressRival();
 }
 function goMain(){
   started=false;finished=false;paused=false;
