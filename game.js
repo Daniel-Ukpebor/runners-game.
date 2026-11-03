@@ -52,27 +52,27 @@ function pick(a){return a[Math.floor(rnd()*a.length)]}
 function clamp(n,a,b){return Math.min(Math.max(n,a),b)}
 function smooth(current,target,k,dt){return THREE.MathUtils.lerp(current,target,1-Math.exp(-k*dt))}
 function boot() {
-  scene=new THREE.Scene();scene.background=new THREE.Color(0x8f9ca7);scene.fog=new THREE.FogExp2(0xba9f9b,.011);
+  scene=new THREE.Scene();scene.background=new THREE.Color(0x8095a2);scene.fog=new THREE.FogExp2(0xbbaea6,.0108);
 
   // Painted-sky dome: evening amber at the horizon, deep slate overhead.
   const skydome=new THREE.Mesh(new THREE.SphereGeometry(185,24,14),new THREE.ShaderMaterial({
     side:THREE.BackSide,depthWrite:false,fog:false,
     vertexShader:'varying vec3 vSky;void main(){vSky=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
-    fragmentShader:'varying vec3 vSky;void main(){float h=normalize(vSky).y;float t=smoothstep(-0.28,0.65,h);vec3 horizon=vec3(0.89,0.59,0.48);vec3 high=vec3(0.37,0.52,0.65);gl_FragColor=vec4(mix(horizon,high,t),1.0);}'
+    fragmentShader:'varying vec3 vSky;void main(){float h=normalize(vSky).y;float t=smoothstep(-0.46,0.22,h);vec3 horizon=vec3(0.96,0.68,0.53);vec3 high=vec3(0.37,0.55,0.68);gl_FragColor=vec4(mix(horizon,high,t),1.0);}'
   }));scene.add(skydome);
   world=new THREE.Group();scene.add(world);
   camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.08,215);
   renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance',alpha:false});
   renderer.outputColorSpace=THREE.SRGBColorSpace;
   renderer.toneMapping=THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure=1.45;
+  renderer.toneMappingExposure=1.17;
   renderer.setPixelRatio(Math.min(devicePixelRatio, isTouch?1.45:1.8));
   renderer.setSize(innerWidth,innerHeight);
   renderer.domElement.setAttribute('aria-label','RUNNERS 3D rooftop course');
   ui.scene.appendChild(renderer.domElement);
-  scene.add(new THREE.HemisphereLight(0xf6e5d5,0x51596b,2.6));
-  const sun=new THREE.DirectionalLight(0xffbd84,3.2);sun.position.set(-34,45,70);scene.add(sun);
-  const ambient=new THREE.DirectionalLight(0xd5dfea,.7);ambient.position.set(20,20,-20);scene.add(ambient);
+  scene.add(new THREE.HemisphereLight(0xf6e5d5,0x51596b,1.75));
+  const sun=new THREE.DirectionalLight(0xffbd84,2.55);sun.position.set(-34,45,70);scene.add(sun);
+  const ambient=new THREE.DirectionalLight(0xd5dfea,.55);ambient.position.set(20,20,-20);scene.add(ambient);
   ball(scene,-65,33,148,9,9,1,mat(0xffd3a0,.65));
   buildDistrict();optimizeDistrict();makeCharacter();makeRival();applyStyle();bindControls();resize();
   ui.best.textContent=best?best.toFixed(1)+'s':'—';
@@ -122,13 +122,13 @@ function surrounding(){
     const z=-26+n*3.35+(rnd()-.5)*2;
     const side=n%2?-1:1,xx=side*(12+rnd()*12),w=5+rnd()*7,d=5+rnd()*7,h=12+rnd()*14;
     const g=new THREE.Group();world.add(g);
-    const sandstone=pick(palettes.stone);
-    block(g,xx,-h/2+(-1+rnd()*2),z,w,h,d,sandstone);
-    block(g,xx,-h/2+h+.03-h/2,z,w+.4,.25,d+.4,pick(palettes.roof));
+    const sandstone=pick(palettes.stone),upper=2+rnd()*8;
+    block(g,xx,upper-h/2,z,w,h,d,sandstone);
+    block(g,xx,upper+.08,z,w+.4,.25,d+.4,pick(palettes.roof));
     if(rnd()>.35){
       const sideX=xx-side*(w/2+.03);
       for(let level=0;level<3;level++){
-        const yy= -2.3-level*3;
+        const yy=upper-2.3-level*3;
         for(let s=-1;s<=1;s+=2){
           const zz=z+s*d*.24;
           block(g,sideX,yy,zz,.07,1.55,1.08,0x453f40);
@@ -141,8 +141,8 @@ function surrounding(){
       }
     }
     if(rnd()>.75){
-      block(g,xx,-h/2+h+.9-h/2,z,.4,1.9,.4,0x8f6553);
-      ball(g,xx,(-h/2+h+.9-h/2)+1.2,z,.7,.35,.7,0x6d766b);
+      block(g,xx,upper+1,z,.4,1.9,.4,0x8f6553);
+      ball(g,xx,upper+2.1,z,.7,.35,.7,0x6d766b);
     }
   }
   // Distant layered skyline; purposeful silhouette rather than endless identical blocks.
@@ -177,7 +177,7 @@ function decorations(){
     }
   }
   for(let i=0;i<30;i++){
-    const z=-10+i*7.4,x=(rnd()-.5)*4;
+    const z=12+i*7.4,x=(rnd()-.5)*4;
     if(i%3===0){
       line(world,[-13,7.4,z],[13,7.7,z+1.9],0x473e43,.026);
       for(let j=0;j<9;j++){
@@ -441,7 +441,7 @@ function newRun(){
   resetPosition(0);started=true;ui.splash.hidden=true;ui.modal.hidden=true;if(rival)rival.visible=true;
   ui.hud.hidden=false;ui.controls.hidden=false;ui.pause.hidden=false;
   ui.pause.setAttribute('aria-label','Pause game');
-  notify('REACH THE BELL TOWER · THE ROOFLINE',3);
+  notify('RIVEN: CATCH ME IF YOU CAN',2.1);
   sound(410,.11);
 }
 function jump(){
@@ -578,7 +578,7 @@ function simulation(dt){
     }
   }
   if(state.z>route.at(-1).z+6.5)finish();
-  ui.time.textContent=elapsed.toFixed(1).padStart(5,'0');
+  ui.time.textContent=Math.floor(elapsed/60).toString().padStart(2,'0')+':'+(elapsed%60).toFixed(1).padStart(4,'0');
   ui.progress.style.width=clamp((state.z+6)/180*100,0,100)+'%';
   const velocity=Math.hypot(state.vx,state.vz);ui.speed.textContent=Math.round(velocity*3.6).toString();
   ui.meter.style.width=Math.round(clamp(velocity/10.4,0,1)*100)+'%';
@@ -617,13 +617,13 @@ function frame(now){
   const dt=Math.min(.045,(now-(frame.previous||now))/1000);frame.previous=now;
   simulation(dt);animateCharacter(dt);updateRival(dt);
   const narrow=innerHeight>innerWidth;
-  const back=narrow?10.7:8.3,up=narrow?5.2:3.9,ahead=narrow?6.7:8.3;
+  const back=narrow?8.5:6.1,up=narrow?4.8:3.45,ahead=narrow?6.3:6.8;
   const followX=state.x*.82;
   targetCamera.set(followX, state.y+up, state.z-back);
   camera.position.lerp(targetCamera,1-Math.exp(-3.6*dt));
   cameraAim.set(state.x*.95,state.y+(narrow?1.3:1.2),state.z+ahead);
   camera.lookAt(cameraAim);
-  const goalFov=narrow?66:67;camera.fov=smooth(camera.fov,goalFov,2,dt);camera.updateProjectionMatrix();
+  const goalFov=(narrow?65:67)+Math.max(0,Math.hypot(state.vx,state.vz)-7)*.48;camera.fov=smooth(camera.fov,goalFov,2,dt);camera.updateProjectionMatrix();
   for(const [i,p] of pickups.entries())if(!p.taken){
     p.group.rotation.y+=dt*1.1;
     p.group.position.y=1.97+Math.sin(now*.002+i)*.16;
