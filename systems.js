@@ -42,7 +42,7 @@ function loadSave(){
 }
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}){
- let save=loadSave(),level=0,tab='story',scene=null,ghost=null,ghostFrame=[],ghostIndex=0,record=[],lastRecord=-1,cutsceneIndex=0,audio=null,master=null,audioStep=0,nextBeat=0,active=false,audioEnabled=false,previewRenderer=null,previewScene=null,previewAvatar=null,previewCamera=null,previewClock=0;
+ let save=loadSave(),level=0,tab='story',scene=null,ghost=null,ghostFrame=[],ghostIndex=0,record=[],lastRecord=-1,cutsceneIndex=0,cutsceneTimer=null,audio=null,master=null,audioStep=0,nextBeat=0,active=false,audioEnabled=false,previewRenderer=null,previewScene=null,previewAvatar=null,previewCamera=null,previewClock=0;
  const $=id=>document.getElementById(id);
  const persist=()=>{try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch(e){console.warn('RUNNERS save could not be stored',e)}};
  const getLevel=()=>LEVELS[level];
@@ -70,7 +70,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   // Put START at the top of the menu; it must be visible without scrolling in landscape.
   menu.insertBefore($('start'),title);
   const content=document.createElement('div');content.id='menu-content';menu.insertBefore(content,menu.querySelector('.featureline'));
-  menu.querySelector('.meta').textContent='BUILD 0.3 · Your progress, upgrades and best-run ghosts are saved on this device. Open in Safari for landscape and audio.';
+  menu.querySelector('.meta').textContent='BUILD 0.4 · Your chapters, looks, upgrades and shadow times stay saved on this device. Landscape Safari recommended.';
   const aside=$('splash').querySelector('.customize');
   aside.id='customize-panel';
   const build=document.createElement('div');
@@ -150,9 +150,11 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
  }
  function startStory(force=false){
   unlockSound();
-  const pages=STORIES[level];
-  if(!force&&save.storySeen[level]){onLaunch();return;}
-  cutsceneIndex=0;$('splash').hidden=true;$('story-overlay').hidden=false;
+  if(cutsceneTimer)clearTimeout(cutsceneTimer);
+  const seen=save.storySeen[level];
+  // Every launch includes an in-world intro. Replays show a short two-shot recap.
+  cutsceneIndex=force||!seen?0:Math.max(0,STORIES[level].length-2);
+  $('splash').hidden=true;$('story-overlay').hidden=false;
   showPage();
  }
  function showPage(){
@@ -165,14 +167,19 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   $('story-step').textContent=(cutsceneIndex+1)+' / '+STORIES[level].length;
   $('story-next').textContent=cutsceneIndex===STORIES[level].length-1?'START THE RACE  ↗':'CONTINUE  →';
   $('story-overlay').dataset.scene=String(cutsceneIndex);
+  if(cutsceneTimer)clearTimeout(cutsceneTimer);
+  // The scene runs hands-free; NEXT and SKIP remain available for accessibility.
+  cutsceneTimer=setTimeout(()=>{if(!$('story-overlay').hidden)advanceStory();},cutsceneIndex===STORIES[level].length-1?4000:4700);
   chime(260+cutsceneIndex*45,.26,.018);
  }
- function advanceStory(){cutsceneIndex++;if(cutsceneIndex>=STORIES[level].length)endStory();else showPage();}
+ function advanceStory(){if($('story-overlay').hidden)return;cutsceneIndex++;if(cutsceneIndex>=STORIES[level].length)endStory();else showPage();}
  function endStory(){
+  if(cutsceneTimer)clearTimeout(cutsceneTimer);cutsceneTimer=null;
   $('story-overlay').hidden=true;
   save.storySeen[level]=true;persist();onLaunch();
  }
  function showMenu(){
+  if(cutsceneTimer)clearTimeout(cutsceneTimer);cutsceneTimer=null;
   active=false;
   if(ghost)ghost.visible=false;
   $('story-overlay').hidden=true;
@@ -221,10 +228,11 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   musicTick();
  }
  function getUpgrade(k){return Number(save.upgrades[k]||0);}
- function afterFinish({elapsed,collected,falls}){
+ function afterFinish({elapsed,collected,falls,stuntScore=0}){
   active=false;
   const prev=save.bests[level],personalBest=prev===null||elapsed<prev;
-  const reward=getLevel().reward+collected*12+(personalBest?30:0);
+  const stuntCredits=Math.min(80,Math.floor(stuntScore/40));
+  const reward=getLevel().reward+collected*12+(personalBest?30:0)+stuntCredits;
   save.wallet+=reward;save.wins[level]=(save.wins[level]||0)+1;
   if(personalBest)save.bests[level]=+elapsed.toFixed(2);
   // A first replay is recorded even if an older (pre-ghost) best already exists.
@@ -235,7 +243,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   const newlyUnlocked=level<LEVELS.length-1&&!save.unlocked[level+1];
   if(newlyUnlocked)save.unlocked[level+1]=true;
   persist();updateHud();
-  return {personalBest,reward,newlyUnlocked,doneAll:level===LEVELS.length-1};
+  return {personalBest,reward,stuntCredits,newlyUnlocked,doneAll:level===LEVELS.length-1};
  }
  // All original game audio is synthesized at runtime—no samples, network music or ads.
  function unlockSound(){
@@ -286,9 +294,9 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
  }
  function sfx(name){
   if(save.muted)return;
-  const note={jump:480,slide:185,hit:118,coin:820,finish:660,footstep:120,unlock:570}[name]||300;
+  const note={jump:480,slide:185,hit:118,coin:820,finish:660,footstep:120,unlock:570,vault:370,trick:780,land:280}[name]||300;
   if(name==='finish'){chime(660,.21,.055);chime(990,.3,.03,'sine',audio?audio.currentTime+.17:undefined);}
-  else chime(note,name==='hit'?.21:.12,name==='hit'?.054:.027,name==='hit'?'sawtooth':'sine');
+  else chime(note,name==='hit'?.21:name==='trick'?.23:.12,name==='hit'?.054:name==='trick'?.045:.027,name==='hit'?'sawtooth':'sine');
  }
 
  function ensurePreview(){
