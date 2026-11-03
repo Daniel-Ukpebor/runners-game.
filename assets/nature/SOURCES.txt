@@ -1,0 +1,1 @@
+Nature Kit 3D models by Kenney (https://kenney.nl/assets/nature-kit), public-domain dedication CC0 1.0. Original GLB conversions hosted by Hidencod/tge-assets (https://github.com/Hidencod/tge-assets). Included here for offline-source/version-stable RUNNERS asset loading. No attribution legally required; provided for provenance. All RUNNERS-original code and art remain separate.
