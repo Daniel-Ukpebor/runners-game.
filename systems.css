@@ -135,3 +135,18 @@
   #avatar-preview{height:205px}
   #customize-panel.customize-focused{max-height:none}
 }
+
+/* Keep the top of the character editor and its live preview on-screen. */
+@media (orientation:landscape) and (max-height:520px){
+ #customize-panel.customize-focused{
+   align-self:flex-start;
+   margin-top:0;
+   position:relative;
+   max-height:calc(100dvh - 30px);
+   overflow-y:auto;
+   overscroll-behavior:contain;
+   scrollbar-width:thin;
+ }
+ #customize-panel.customize-focused #avatar-preview{min-height:118px;height:118px}
+ #customize-panel.customize-focused .custom-title{margin-bottom:3px}
+}
