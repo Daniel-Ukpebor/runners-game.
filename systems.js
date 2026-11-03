@@ -26,11 +26,16 @@ export const STORIES=[
   {time:'CHAPTER THREE · NIGHTLINE',where:'THE LAST START LINE',who:'KAI',text:'“I’ve been running this city since I was nine.”',desc:'One last qualifier. The bell tower is a long way behind them now. The old grocery receipt is still in Kai’s pocket.'}
  ]
 ];
+export const TIERS=[
+ {id:'street',label:'STREET',factor:1.00,payout:1,description:'Learn the rooftops'},
+ {id:'pro',label:'PRO',factor:1.13,payout:1.6,description:'Faster rival. Better rewards'},
+ {id:'elite',label:'ELITE',factor:1.22,payout:2.5,description:'No easy shortcuts'}
+];
 const SAVE_KEY='runners.save.v3';
-const fresh=()=>({wallet:0,unlocked:[true,false,false],wins:[0,0,0],bests:[null,null,null],ghosts:[null,null,null],ghostTimes:[null,null,null],storySeen:[false,false,false],upgrades:{pace:0,spring:0,grip:0},muted:false});
+const fresh=()=>({wallet:0,unlocked:[true,false,false],wins:[0,0,0],bests:[null,null,null],ghosts:[null,null,null],ghostTimes:[null,null,null],storySeen:[false,false,false],upgrades:{pace:0,spring:0,grip:0},tier:1,medals:[0,0,0],muted:false});
 function loadSave(){
  let x=fresh();try{const a=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(a&&typeof a==='object')x={...x,...a,upgrades:{...x.upgrades,...(a.upgrades||{})}}}catch(e){}
- for(const k of ['bests','ghosts','ghostTimes','wins','unlocked','storySeen'])if(!Array.isArray(x[k]))x[k]=fresh()[k];
+ for(const k of ['bests','ghosts','ghostTimes','wins','unlocked','storySeen','medals'])if(!Array.isArray(x[k]))x[k]=fresh()[k];
  // Preserve the user's Version 2 record even though older builds did not record a replay.
  try{
   if(!localStorage.getItem(SAVE_KEY)){
@@ -46,6 +51,8 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
  const $=id=>document.getElementById(id);
  const persist=()=>{try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch(e){console.warn('RUNNERS save could not be stored',e)}};
  const getLevel=()=>LEVELS[level];
+ const tier=()=>TIERS[clamp(Number(save.tier)||0,0,TIERS.length-1)];
+ const getRivalSpeed=()=>getLevel().speed*tier().factor;
  function updateHud(){
   const l=getLevel();
   $('chapter-label').textContent='VESPER / CH.'+l.chapter+' — '+l.name;
@@ -65,7 +72,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   menu.querySelector('.featureline').innerHTML='<span>STORY RACES</span><span>TIME GHOSTS</span><span>UPGRADES</span>';
   $('start').textContent='CONTINUE STORY  ↗';
   const select=document.createElement('nav');select.id='menu-nav';select.setAttribute('aria-label','Game menu');
-  select.innerHTML='<button data-tab="story" class="nav-active">STORY</button><button data-tab="races">RACES</button><button data-tab="upgrades">UPGRADES</button><button data-tab="customize">CUSTOMIZE</button>';
+  select.innerHTML='<button data-tab="story" class="nav-active">HOME</button><button data-tab="races">DISTRICTS</button><button data-tab="upgrades">WORKSHOP</button><button data-tab="customize">LOADOUT</button>';
   menu.insertBefore(select,title);
   // Put START at the top of the menu; it must be visible without scrolling in landscape.
   menu.insertBefore($('start'),title);
@@ -74,7 +81,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   const aside=$('splash').querySelector('.customize');
   aside.id='customize-panel';
   const build=document.createElement('div');
-  build.innerHTML='<div class="custom-label">BODY / GENDER PRESENTATION</div><div class="swatches build-options"><button class="hair-choice" data-build="0">MASCULINE</button><button class="hair-choice" data-build="1">FEMININE</button><button class="hair-choice" data-build="2">ANDROGYNOUS</button></div><div class="custom-subnote">All styles, outfits and abilities are available to every runner.</div>';
+  build.innerHTML='<div class="custom-label">CHARACTER</div><div class="swatches build-options"><button class="hair-choice" data-build="0">MASCULINE</button><button class="hair-choice" data-build="1">FEMININE</button></div><div class="custom-subnote">The same movement and outfits work for both characters.</div>';
   const first=aside.querySelector('.custom-title');
   const preview=document.createElement('div');preview.id='avatar-preview';preview.hidden=true;
   first.insertAdjacentElement('afterend',build);
@@ -115,6 +122,8 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
    if(buy){buyUpgrade(buy.dataset.buy);return;}
    const replay=e.target.closest('[data-replay]');
    if(replay){startStory(true);return;}
+   const dif=e.target.closest('[data-tier]');
+   if(dif){save.tier=Number(dif.dataset.tier);persist();setTab(tab);updateHud();return;}
   });
   // Dedicated character studio: preview and controls never compete for a narrow sidebar.
   const stage=document.createElement('section');stage.id='studio-stage';
@@ -130,6 +139,28 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   aside.append(stage,controls);
   $('studio-back').addEventListener('click',()=>setTab('story'));
   $('studio-race').addEventListener('click',()=>startStory());
+  const hint=document.createElement('div');hint.className='hub-hint';
+  hint.innerHTML='<b>‹</b> SWIPE TO EXPLORE <b>›</b>　 ·　 R = RESTART IN RACE';
+  menu.appendChild(hint);
+  let swipeStart=null;
+  $('splash').addEventListener('pointerdown',e=>{
+    if(e.target.closest('button,#customize-panel,#menu-content .race-list,#menu-content .tier-selector'))return;
+    swipeStart={x:e.clientX,y:e.clientY,id:e.pointerId};
+  });
+  $('splash').addEventListener('pointerup',e=>{
+    if(!swipeStart||swipeStart.id!==e.pointerId)return;
+    const dx=e.clientX-swipeStart.x,dy=e.clientY-swipeStart.y;swipeStart=null;
+    if(Math.abs(dx)>58&&Math.abs(dx)>Math.abs(dy)*1.5){
+      const pages=['story','races','upgrades','customize'];
+      setTab(pages[clamp(pages.indexOf(tab)+(dx<0?1:-1),0,pages.length-1)]);
+    }
+  });
+  document.addEventListener('keydown',e=>{
+    if($('splash').hidden||e.repeat||!['ArrowLeft','ArrowRight'].includes(e.code))return;
+    const pages=['story','races','upgrades','customize'];
+    const pos=pages.indexOf(tab)+(e.code==='ArrowRight'?1:-1);
+    setTab(pages[clamp(pos,0,pages.length-1)]);
+  });
   updateHud();setTab('story');
  }
  function setTab(t){
@@ -142,10 +173,14 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   const box=$('menu-content');
   if(t==='story'){
    const l=getLevel();
-   box.innerHTML='<div class="content-eyebrow">CURRENT CHAPTER · '+l.chapter+'</div><div class="current-chapter">'+l.name+'</div><p>Rival: <strong>'+l.rival+'</strong> · '+l.subtitle+'</p><div class="menu-wallet">◈ '+save.wallet+' ROUTE CREDITS <span class="menu-hint">Finish races to earn more</span></div><button data-replay="1" class="text-button">↻ WATCH CHAPTER INTRO</button>';
+   box.innerHTML='<div class="content-eyebrow">THE MIDNIGHT CIRCUIT / CHAPTER '+l.chapter+'</div><div class="current-chapter">'+l.name+'</div><p>Race <strong>'+l.rival+'</strong> across '+l.subtitle.toLowerCase()+'. Beat your best. Leave a shadow for your next run.</p><div class="menu-wallet">◈ '+save.wallet+' ROUTE CREDITS</div><span class="tier-note">CURRENT LEAGUE: <b>'+tier().label+'</b> · '+tier().description+'</span><br><button data-replay="1" class="text-button">WATCH THE STORY AGAIN</button>';
    $('start').hidden=false;$('start').textContent=save.storySeen[level]?'RACE '+l.rival.toUpperCase()+'  ↗':'PLAY CHAPTER '+l.chapter+'  ↗';
   } else if(t==='races'){
-   box.innerHTML='<div class="content-eyebrow">ROOFTOP CIRCUIT · LEVEL SELECT</div><div class="race-list">'+LEVELS.map((l,i)=>'<button class="race-row '+(i===level?'chosen':'')+'" data-race="'+i+'" '+(!save.unlocked[i]?'disabled':'')+'><span class="race-number">'+l.chapter+'</span><span class="race-copy"><b>'+l.name+'</b><small>'+l.subtitle+' · '+l.rival+'</small></span><span class="race-record">'+(save.unlocked[i]?(save.bests[i]===null?'NEW':Number(save.bests[i]).toFixed(1)+'s'):'LOCKED')+'</span></button>').join('')+'</div><div class="menu-hint">Beat each chapter to unlock the next. Replays earn credits and build your time ghost.</div>';
+   const tiers='<div class="tier-selector" role="group" aria-label="Rival difficulty">'+TIERS.map((d,i)=>'<button data-tier="'+i+'" class="'+(save.tier===i?'selected':'')+'">'+d.label+' · '+d.payout+'×</button>').join('')+'</div>';
+   box.innerHTML='<div class="content-eyebrow">CIRCUIT / CHOOSE YOUR RIVAL</div>'+tiers+
+   '<div class="tier-note">Rival pace: <b>'+getRivalSpeed().toFixed(1)+'</b> m/s · Prize multiplier: <b>'+tier().payout+'×</b></div>'+
+   '<div class="race-list">'+LEVELS.map((l,i)=>'<button class="race-row '+(i===level?'chosen':'')+'" data-race="'+i+'" '+(!save.unlocked[i]?'disabled':'')+'><span class="race-number">'+l.chapter+'</span><span class="race-copy"><b>'+l.name+'</b><small>'+l.subtitle+' · '+l.rival+' · '+['NO MEDAL','STREET','PRO','ELITE'][save.medals[i]||0]+'</small></span><span class="race-record">'+(save.unlocked[i]?(save.bests[i]===null?'NEW':Number(save.bests[i]).toFixed(1)+'s'):'LOCKED')+'</span></button>').join('')+'</div>'+
+   '<div class="future-routes" aria-label="Future districts"><div class="future-route">04 / HARBOR RUN<small>IN DEVELOPMENT · LOCKED</small></div><div class="future-route">05 / OLD RAIL<small>IN DEVELOPMENT · LOCKED</small></div><div class="future-route">06 / NORTHLIGHT<small>IN DEVELOPMENT · LOCKED</small></div></div>';
    $('start').hidden=false;$('start').textContent='RACE '+getLevel().rival.toUpperCase()+'  ↗';
   } else if(t==='upgrades'){
    const upgrades=[{key:'pace',title:'PACE',description:'Higher sprint speed',max:3,cost:55},{key:'spring',title:'SPRING',description:'Stronger takeoff for longer gaps',max:3,cost:55},{key:'grip',title:'GRIP',description:'Sharper air steering',max:3,cost:55}];
@@ -246,11 +281,12 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   musicTick();
  }
  function getUpgrade(k){return Number(save.upgrades[k]||0);}
- function afterFinish({elapsed,collected,falls,stuntScore=0}){
+ function afterFinish({elapsed,collected,falls,stuntScore=0,beatRival=false}){
   active=false;
   const prev=save.bests[level],personalBest=prev===null||elapsed<prev;
   const stuntCredits=Math.min(80,Math.floor(stuntScore/40));
-  const reward=getLevel().reward+collected*12+(personalBest?30:0)+stuntCredits;
+  const baseReward=Math.round((getLevel().reward+(beatRival?55:15))*tier().payout);
+  const reward=baseReward+collected*12+(personalBest?30:0)+stuntCredits;
   save.wallet+=reward;save.wins[level]=(save.wins[level]||0)+1;
   if(personalBest)save.bests[level]=+elapsed.toFixed(2);
   // A first replay is recorded even if an older (pre-ghost) best already exists.
@@ -258,10 +294,11 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
    save.ghosts[level]=record.slice(-850);
    save.ghostTimes[level]=+elapsed.toFixed(2);
   }
-  const newlyUnlocked=level<LEVELS.length-1&&!save.unlocked[level+1];
+  if(beatRival)save.medals[level]=Math.max(Number(save.medals[level]||0),Number(save.tier)+1);
+  const newlyUnlocked=beatRival&&level<LEVELS.length-1&&!save.unlocked[level+1];
   if(newlyUnlocked)save.unlocked[level+1]=true;
   persist();updateHud();
-  return {personalBest,reward,stuntCredits,newlyUnlocked,doneAll:level===LEVELS.length-1};
+  return {personalBest,reward,stuntCredits,newlyUnlocked,beatRival,tier:tier().label,doneAll:level===LEVELS.length-1};
  }
  // All original game audio is synthesized at runtime—no samples, network music or ads.
  function unlockSound(){
@@ -363,6 +400,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
  return {
   init,getLevel,levelIndex:()=>level,coursePositions:()=>getLevel().positions,courseHazards:()=>getLevel().hazards,
   startStory,showMenu,beforeRun,track,afterFinish,getUpgrade,unlockSound,toggleAudio,sfx,
+  getRivalSpeed,getTier:()=>tier(),getTierIndex:()=>save.tier,
   getBest:()=>save.bests[level],getWallet:()=>save.wallet,isMuted:()=>save.muted,
   setRace:selectRace,refresh:()=>{setTab(tab);updateHud()},refreshAvatar,drawPreview,
   audioState:()=>audio?.state||'not-created'
