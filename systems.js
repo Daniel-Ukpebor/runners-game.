@@ -116,6 +116,20 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
    const replay=e.target.closest('[data-replay]');
    if(replay){startStory(true);return;}
   });
+  // Dedicated character studio: preview and controls never compete for a narrow sidebar.
+  const stage=document.createElement('section');stage.id='studio-stage';
+  const stageHead=document.createElement('div');stageHead.className='studio-head';
+  stageHead.innerHTML='<span class="eyebrow">VESPER CITY / RUNNERS</span><h2>KAI<span>.</span></h2><p>YOUR RUNNER. YOUR ROUTE.</p>';
+  stage.appendChild(stageHead);stage.appendChild(preview);
+  const controls=document.createElement('section');controls.id='studio-controls';
+  const oldControls=[...aside.children].filter(el=>el!==stage);
+  for(const child of oldControls)controls.appendChild(child);
+  const actions=document.createElement('div');actions.id='studio-actions';
+  actions.innerHTML='<button id="studio-back" class="secondary">← BACK TO MENU</button><button id="studio-race" class="primary">RACE WITH THIS LOOK ↗</button>';
+  controls.appendChild(actions);
+  aside.append(stage,controls);
+  $('studio-back').addEventListener('click',()=>setTab('story'));
+  $('studio-race').addEventListener('click',()=>startStory());
   updateHud();setTab('story');
  }
  function setTab(t){
@@ -309,11 +323,14 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
    previewScene=new THREE.Scene();
    previewScene.add(new THREE.HemisphereLight(0xffe9db,0x354756,2.35));
    const lamp=new THREE.DirectionalLight(0xffc18d,2.3);lamp.position.set(3,5,5);previewScene.add(lamp);
-   previewCamera=new THREE.PerspectiveCamera(39,250/180,.1,100);
-   previewCamera.position.set(2.8,1.85,3.75);previewCamera.lookAt(0,.52,0);
+   const w=Math.max(275,Math.min(530,Math.round(innerWidth*.46)));
+   const h=Math.max(210,Math.min(440,Math.round(innerHeight*.80)));
+   previewCamera=new THREE.PerspectiveCamera(35,w/h,.1,100);
+   previewCamera.position.set(2.85,2.0,4.2);previewCamera.lookAt(0,.77,0);
    previewRenderer=new THREE.WebGLRenderer({alpha:true,antialias:false,powerPreference:'low-power'});
    previewRenderer.setPixelRatio(1);
-   previewRenderer.setSize(250,180,false);
+   previewRenderer.setPixelRatio(Math.min(devicePixelRatio,1.25));
+   previewRenderer.setSize(w,h,false);
    previewRenderer.setClearColor(0x000000,0);
    $('avatar-preview').appendChild(previewRenderer.domElement);
    refreshAvatar();
