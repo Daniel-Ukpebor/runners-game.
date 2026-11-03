@@ -1,8 +1,8 @@
 {
-  "name": "RUNNERS: The Steps",
+  "name": "RUNNERS — The Midnight Circuit",
   "short_name": "RUNNERS",
   "id": "./",
-  "description": "An atmospheric 3D rooftop parkour trial set in Vesper.",
+  "description": "Three linked 3D rooftop races with rivals, personal replay ghosts, and upgrades.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
