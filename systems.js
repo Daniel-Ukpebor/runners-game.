@@ -47,7 +47,7 @@ export function createSystems({THREE,getScene,onLaunch,onMenu,onStyle}){
   $('coin-count').textContent=String(save.wallet);
   $('ghost-indicator').textContent=save.ghosts[level]?'GHOST ON':'NO GHOST YET';
   $('ghost-indicator').classList.toggle('ghost-ready',!!save.ghosts[level]);
-  $('menu-credits').textContent=String(save.wallet);
+  const credits=$('menu-credits');if(credits)credits.textContent=String(save.wallet);
  }
  function createUI(){
   const menu=$('splash').querySelector('.menu');
