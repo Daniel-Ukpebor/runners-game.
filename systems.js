@@ -1,3 +1,4 @@
+import {cloneSkeleton,animateKai} from './character-rig.js';
 // RUNNERS 3 / chapter progression, save data, story, replay ghost and original procedural audio.
 export const LEVELS=[
  {id:'steps',chapter:'01',name:'THE STEPS',subtitle:'ROOFLINE TRIAL',rival:'Riven',speed:8.25,color:'#e9b280',reward:65,
@@ -104,6 +105,9 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   hairs.insertAdjacentHTML('afterend','<button class="hair-choice" data-hair="3">AFRO</button><button class="hair-choice" data-hair="4">BRAIDS</button><button class="hair-choice" data-hair="5">LOCS</button>');
   const hairSwatches=document.createElement('div');hairSwatches.innerHTML='<div class="custom-label">HAIR COLOR</div><div class="swatches"><button class="swatch hair-swatch" data-haircolor="0" aria-label="Black hair" style="background:#222428"></button><button class="swatch hair-swatch" data-haircolor="1" aria-label="Brown hair" style="background:#443128"></button><button class="swatch hair-swatch" data-haircolor="2" aria-label="Auburn hair" style="background:#744329"></button><button class="swatch hair-swatch" data-haircolor="3" aria-label="Blonde hair" style="background:#be9063"></button><button class="swatch hair-swatch" data-haircolor="4" aria-label="Burgundy hair" style="background:#8b3142"></button></div>';
   hairs.closest('.swatches').insertAdjacentElement('afterend',hairSwatches);
+  const outfits=document.createElement('section');outfits.id='outfit-options';
+  outfits.innerHTML='<div class="custom-label">OUTFIT</div><div class="swatches"><button class="hair-choice" data-outfit="0">TRACK JACKET</button><button class="hair-choice" data-outfit="1">SLEEVELESS</button><button class="hair-choice" data-outfit="2">NIGHT RUN</button></div>';
+  hairSwatches.insertAdjacentElement('afterend',outfits);
   const gearOptions=document.createElement('div');gearOptions.id='gear-options';
   gearOptions.innerHTML='<div class="custom-label">GEAR</div><div class="swatches"><button class="hair-choice" data-gear="0">DAYPACK</button><button class="hair-choice" data-gear="1">NO PACK</button></div>';
   hairSwatches.insertAdjacentElement('afterend',gearOptions);
@@ -184,7 +188,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
     }
   });
   document.addEventListener('keydown',e=>{
-    if(e.target.closest('#avatar-preview')||$('splash').hidden||e.repeat||!['ArrowLeft','ArrowRight'].includes(e.code))return;
+    if(document.body.classList.contains('movement-preview')||e.target.closest('#avatar-preview')||$('splash').hidden||e.repeat||!['ArrowLeft','ArrowRight'].includes(e.code))return;
     const pages=['story','races','upgrades','customize'];
     const pos=pages.indexOf(tab)+(e.code==='ArrowRight'?1:-1);
     setTab(pages[clamp(pos,0,pages.length-1)]);
@@ -281,16 +285,11 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
  function makeGhost(){
   if(ghost&&ghost.parent)ghost.parent.remove(ghost);ghost=null;ghostFrame=save.ghosts[level]||[];
   if(!ghostFrame.length)return;
-  const group=new THREE.Group();group.name='Best-run shadow';
-  const glow=new THREE.MeshStandardMaterial({color:0x78e4ef,transparent:true,opacity:.36,emissive:0x1cccdc,emissiveIntensity:.56,depthWrite:false,flatShading:true});
-  const geo=new THREE.SphereGeometry(1,9,7),cyl=new THREE.CylinderGeometry(1,1,1,8);
-  function add(g,mat,x,y,z,sx,sy,sz){const p=new THREE.Mesh(g,mat);p.position.set(x,y,z);p.scale.set(sx,sy,sz);group.add(p);return p;}
-  add(cyl,glow,0,.65,0,.29,.84,.25);
-  add(geo,glow,0,1.5,0,.24,.31,.24);
-  for(const side of [-1,1]){
-   add(cyl,glow,side*.38,.68,0,.12,.69,.12);
-   add(cyl,glow,side*.17,-.25,0,.14,.78,.13);
-  }
+  const group=cloneSkeleton(getRunner());group.name='Best-run shadow';
+  group.traverse(o=>{if(o.isMesh){
+    const tint=m=>{const c=m.clone();c.color.set(0x78cdd7);c.transparent=true;c.opacity=.27;c.depthWrite=false;c.emissive?.set(0x164c51);return c};
+    o.material=Array.isArray(o.material)?o.material.map(tint):tint(o.material);o.castShadow=false;
+  }});
   scene=getScene();scene.add(group);ghost=group;ghostIndex=0;ghost.position.set(ghostFrame[0].x,ghostFrame[0].y,ghostFrame[0].z);
  }
  function beforeRun(){
@@ -312,6 +311,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
    ghost.visible=elapsed<=ghostFrame.at(-1).t+.1;
    ghost.position.set(a.x+(b.x-a.x)*f,a.y+(b.y-a.y)*f,a.z+(b.z-a.z)*f);
    ghost.rotation.y=a.r+(b.r-a.r)*f;
+   animateKai(ghost,dt,{vx:(b.x-a.x)/Math.max(.01,b.t-a.t),vz:(b.z-a.z)/Math.max(.01,b.t-a.t),grounded:Math.abs(a.y-b.y)<.05});
    if(ghost.visible&&elapsed>.3){const distance=state.z-ghost.position.z;
     $('ghost-indicator').textContent=(Math.abs(distance)/9).toFixed(1)+'s '+(distance>=0?'AHEAD OF':'BEHIND')+' YOUR SHADOW';
    }
@@ -344,7 +344,13 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   try{
    const A=window.AudioContext||window.webkitAudioContext;
    if(!A)return;
-   if(!audio){audio=new A();master=audio.createGain();master.gain.value=.35;master.connect(audio.destination);}
+   if(!audio){
+    audio=new A();master=audio.createGain();master.gain.value=.35;master.connect(audio.destination);
+    // Original coastal ambience: filtered noise, no licensed audio downloads.
+    const buffer=audio.createBuffer(1,audio.sampleRate*3,audio.sampleRate),data=buffer.getChannelData(0);
+    for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*.18;
+    const wind=audio.createBufferSource(),filter=audio.createBiquadFilter(),gain=audio.createGain();wind.buffer=buffer;wind.loop=true;filter.type='lowpass';filter.frequency.value=480;gain.gain.value=.035;wind.connect(filter);filter.connect(gain);gain.connect(master);wind.start();
+   }
    if(audio.state==='suspended')audio.resume();
    audioEnabled=true;
    $('sound').textContent='SOUND ON';
@@ -392,6 +398,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   else chime(note,name==='hit'?.21:name==='trick'?.23:.12,name==='hit'?.054:name==='trick'?.045:.027,name==='hit'?'sawtooth':'sine');
  }
 
+ window.__runnersStudioDiagnostic=()=>({yaw:previewYaw,zoom:previewZoom});
  function ensurePreview(){
   if(previewRenderer)return;
   try{
@@ -401,7 +408,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
    const w=Math.max(275,Math.min(530,Math.round(innerWidth*.46)));
    const h=Math.max(210,Math.min(440,Math.round(innerHeight*.80)));
    previewCamera=new THREE.PerspectiveCamera(35,w/h,.1,100);
-   previewCamera.position.set(0,.7,previewZoom);previewCamera.lookAt(0,.55,0);
+   previewCamera.position.set(0,.7,previewZoom);previewCamera.lookAt(0,.4,0);
    previewRenderer=new THREE.WebGLRenderer({alpha:true,antialias:false,powerPreference:'low-power'});
    previewRenderer.setPixelRatio(1);
    previewRenderer.setPixelRatio(Math.min(devicePixelRatio,1.25));
@@ -411,7 +418,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
    host.tabIndex=0;
    let pitch=0,pinch=0;
    const pointers=new Map();
-   const pose=()=>{previewCamera.position.set(0,.7+pitch,previewZoom);previewCamera.lookAt(0,.55,0)};
+   const pose=()=>{previewCamera.position.set(0,.7+pitch,previewZoom);previewCamera.lookAt(0,.4,0)};
    new ResizeObserver(()=>{
      const {width,height}=host.getBoundingClientRect();if(!width||!height)return;
      previewCamera.aspect=width/height;previewCamera.updateProjectionMatrix();
@@ -422,7 +429,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
      e.preventDefault();e.stopPropagation();
      previewYaw+=e.key==='ArrowLeft'?-.15:e.key==='ArrowRight'?.15:0;
      pitch=clamp(pitch+(e.key==='ArrowUp'?.15:e.key==='ArrowDown'?-.15:0),-.6,1.4);
-     previewZoom=clamp(previewZoom+(e.key==='+'?-.3:e.key==='-'?.3:0),4.8,8);
+     previewZoom=clamp(previewZoom+(e.key==='+'?-.3:e.key==='-'?.3:0),5.4,8);
      pose();previewAvatar.rotation.y=previewYaw;previewStill=6;
    });
    host.addEventListener('pointerdown',e=>{
@@ -437,7 +444,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
      pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
      if(pointers.size===2){
        const [a,b]=[...pointers.values()],distance=Math.hypot(a.x-b.x,a.y-b.y);
-       if(pinch)previewZoom=clamp(previewZoom+(pinch-distance)*.012,4.8,8);
+       if(pinch)previewZoom=clamp(previewZoom+(pinch-distance)*.012,5.4,8);
        pinch=distance;pose();previewDrag=null;return;
      }
      if(!previewDrag||previewDrag.id!==e.pointerId)return;
@@ -451,7 +458,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
    host.addEventListener('pointerup',release);host.addEventListener('pointercancel',release);
    host.addEventListener('wheel',e=>{
      e.preventDefault();
-     previewZoom=clamp(previewZoom+e.deltaY*.003,4.8,8);
+     previewZoom=clamp(previewZoom+e.deltaY*.003,5.4,8);
      pose();
      previewStill=6;
    },{passive:false});
@@ -461,7 +468,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
  function refreshAvatar(){
   if(!previewScene||!previewRenderer)return;
   if(previewAvatar)previewScene.remove(previewAvatar);
-  previewAvatar=getRunner().clone(true);
+  previewAvatar=cloneSkeleton(getRunner());
   previewAvatar.rotation.y=previewYaw;
   previewScene.add(previewAvatar);
   previewRenderer.render(previewScene,previewCamera);
@@ -471,7 +478,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   previewClock+=dt;
   if(previewClock<1/25)return;
   if(previewStill>0)previewStill=Math.max(0,previewStill-previewClock);else{previewYaw+=previewClock*.16;previewAvatar.rotation.y=previewYaw;}
-  previewAvatar.children[1].position.y=Math.sin(performance.now()*.002)*.012;
+  animateKai(previewAvatar,previewClock,{grounded:true});
   previewClock=0;
   previewRenderer.render(previewScene,previewCamera);
  }

@@ -13,13 +13,16 @@ jobs:
         with:
           node-version: '22'
       - name: Install headless browser controller
-        run: npm install --no-save playwright-core
+        run: npm install --no-save playwright-core@1.57.0
       - name: Serve the project
         run: |
           python3 -m http.server 8765 >/tmp/runners-server.log 2>&1 &
           sleep 2
       - name: Test rendering, start, movement and portrait layout
-        run: node tests/smoke.cjs
+        run: |
+          node tests/smoke.cjs
+          node tests/studio.cjs
+          node tests/rebuild.cjs
       - name: Save screenshots
         if: always()
         uses: actions/upload-artifact@v4

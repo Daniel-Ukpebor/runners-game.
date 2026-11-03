@@ -109,3 +109,30 @@
 @media(orientation:portrait){#customize-panel.customize-focused{padding-top:48px!important}#studio-categories{height:48px;gap:0}#studio-categories button{padding:10px 8px}}
 #studio-stage #avatar-preview:after{content:none!important}
 #customize-panel #studio-stage:before{content:none!important}
+#camera-settings{order:7;position:relative;margin-top:12px;font-size:10px;color:#e5ccb2;max-width:290px;pointer-events:auto}
+#camera-settings summary{cursor:pointer;letter-spacing:.1em;padding:6px 0}
+#camera-settings[open]{background:#132227;padding:10px}
+#camera-settings label{display:flex;align-items:center;gap:9px;padding:6px 0}
+#camera-settings input[type=range]{max-width:120px;accent-color:#efb27e}
+#movement-preview{order:8;background:transparent;border:0;color:#e7ba94;font-size:9px;letter-spacing:.12em;padding:8px 0;text-align:left}
+@media(orientation:landscape) and (max-height:540px){#camera-settings{margin-top:4px}#camera-settings[open]{position:absolute;left:100%;bottom:0;width:230px;z-index:5}#movement-preview{font-size:8px;padding:4px 0}}
+@media(prefers-reduced-motion:no-preference){#splash #menu-content{animation:menu-enter .22s ease-out}@keyframes menu-enter{from{opacity:.3;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}}
+#asset-status{position:absolute;top:16px;right:22px;font-size:10px;letter-spacing:.12em;color:#f0c197;pointer-events:none}
+body.movement-preview #controls{z-index:12}
+body.movement-preview #controls .action{display:none!important}
+/* Keep all three race counters visible; portrait uses a dedicated readout row. */
+#hud .stats>div{display:block!important}
+@media(orientation:portrait){
+ #hud #chapter-label{max-width:220px;font-size:8px!important;letter-spacing:.06em!important}
+ #hud .stats{left:24px!important;right:auto!important;top:calc(78px + env(safe-area-inset-top))!important;gap:24px!important}
+ #hud #stunt-hud{top:calc(130px + env(safe-area-inset-top))!important;bottom:auto!important}
+ #hud #ghost-indicator{display:block!important;top:143px!important;max-width:210px;font-size:8px!important}
+}
+#hud .stats>div:nth-child(n){display:block!important}
+@media(orientation:portrait){#toast{top:calc(182px + env(safe-area-inset-top))!important}}
+@media(prefers-reduced-motion:no-preference){
+ #customize-panel.customize-focused{animation:studio-open .22s ease-out}
+ #story-overlay:not([hidden]),#hud:not([hidden]),#splash:not([hidden]) .menu{animation:scene-open .24s ease-out}
+ @keyframes studio-open{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+ @keyframes scene-open{from{opacity:0}to{opacity:1}}
+}

@@ -1,4 +1,30 @@
-# RUNNERS — The Midnight Circuit (Build 0.5)
+# RUNNERS — The Vesper Circuit (Build 0.7)
+
+A static Three.js parkour game starring Kai and Riven. This rebuild introduces an original weighted GLB humanoid, editable Blender source, nine hand-authored animation clips with cross-fades, six hairstyles, body/face customization and fitted accessories. Assets and their source are documented in [assets/characters/SOURCES.md](assets/characters/SOURCES.md).
+
+The Steps now connects three traversal choices: the original rooftop race, a slower continuous lower market passage, and narrow scaffolding with jump gaps, a vault barrier and contextual pipe climbing. All existing chapters, rival tiers, upgrades, Signals, records and replay saves retain their existing storage keys. Ghosts now use a skeletal character copy.
+
+The loadout supports mouse/touch orbit and pitch, wheel/pinch zoom, keyboard camera control, five navigation categories and persistent Back/Play actions. The main-menu runner can be orbited; Try Movement confines movement to the staging roof. Camera options provide sensitivity, optional recentering, camera-relative movement and speed FOV. Character shadows and adaptive resolution improve presentation without adding postprocessing dependencies.
+
+## Develop and validate
+
+Serve the repository root with `python3 -m http.server 8765`. There is no application install or build step. Three.js 0.169.0 loads from jsDelivr; local GLBs require the HTTP server. Audio unlocks on a user gesture. No application credentials are required.
+
+Browser checks require `playwright-core` and Chromium. Set `CHROME_PATH` if the browser lives elsewhere. Run `node tests/smoke.cjs`, `node tests/studio.cjs`, and `node tests/rebuild.cjs`. CI installs the browser controller and runs all three suites. Generated captures live in ignored `test-results/`; review captures are in `docs/rebuild/`.
+
+Regenerate the original character with `blender -b --python tools/build_kai.py` (Blender 4.3+). The compressed `.blend` is editable source. Generated assets and the generator are CC0; the rest of the repository is not relicensed.
+
+## Deployment and limitations
+
+`vercel.json` configures static hosting; `.vercelignore` excludes Blender source, tests and review images from deployment. Import this repository into the intended Vercel project, choose the branch to deploy, and retain the static settings. Account/project authorization is required to publish. No Vercel deployment is implied by configuration files.
+
+This is an original stylized indie asset and contained district slice, not a AAA character, motion-capture library or open world. Hands and facial detail remain simplified. Browser software-WebGL tests do not establish actual iPhone frame rates. Three.js still requires CDN access. Local saves are origin-specific: a Vercel domain will not automatically inherit GitHub Pages saves. See [implementation and validation](docs/rebuild/IMPLEMENTATION.md).
+
+---
+
+## Previous releases
+
+### Build 0.5 — The Midnight Circuit
 
 A **playable mobile-friendly 3D parkour story game** in the fictional coastal city of **Vesper**, with three linked rooftop races and permanent local progress. This is an evolving vertical slice—not an App Store/native iOS release or a finished commercial game.
 

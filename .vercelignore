@@ -1,0 +1,7 @@
+.git
+.github
+test-results
+tests
+tools
+docs
+assets/characters/*.blend*

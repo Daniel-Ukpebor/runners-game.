@@ -1,9 +1,10 @@
+import {cloneSkeleton,animateKai} from './character-rig.js';
 // RUNNERS / in-engine cinematic direction.
 // Runs over the exact same 3D district as gameplay. There are no static story slides.
 export function createCinematic({THREE,scene,camera,actor,rival,runner,route,ensureCourse,levelIndex}){
  const overlay=document.getElementById('story-overlay');
  const target=new THREE.Vector3(),look=new THREE.Vector3(),aim=new THREE.Vector3();
- let youthKai=runner.clone(true),youthRiven=rival.clone(true);
+ let youthKai=cloneSkeleton(runner),youthRiven=cloneSkeleton(rival);
  youthKai.name='Kai, summer in Vesper';youthRiven.name='Riven, summer in Vesper';
  youthKai.scale.setScalar(.73);youthRiven.scale.setScalar(.73);
  scene.add(youthKai,youthRiven);youthKai.visible=youthRiven.visible=false;
@@ -23,7 +24,7 @@ export function createCinematic({THREE,scene,camera,actor,rival,runner,route,ens
    active=true;ensureCourse();shot=-1;
    // Rebuild the cinematic doubles from the currently customized runner.
    scene.remove(youthKai,youthRiven);
-   youthKai=runner.clone(true);youthRiven=rival.clone(true);
+   youthKai=cloneSkeleton(runner);youthRiven=cloneSkeleton(rival);
    youthKai.scale.setScalar(.73);youthRiven.scale.setScalar(.73);
    scene.add(youthKai,youthRiven);
   }
@@ -36,11 +37,12 @@ export function createCinematic({THREE,scene,camera,actor,rival,runner,route,ens
   actor.visible=!past;rival.visible=!past;
   if(past){
    const travel=(sceneNum===0?Math.min(8,t*1.75):Math.min(11,t*2.05));
-   youthKai.position.set(base.x-.82,1,base.z-6+travel);
-   youthRiven.position.set(base.x+.88,1,base.z-5.1+travel*1.06);
+   youthKai.position.set(base.x-.82,.73,base.z-6+travel);
+   youthRiven.position.set(base.x+.88,.73,base.z-5.1+travel*1.06);
    const bob=Math.sin(t*13)*.04;
    youthKai.position.y+=bob;youthRiven.position.y-=bob;
    youthKai.rotation.y=youthRiven.rotation.y=0;
+   animateKai(youthKai,dt,{vx:0,vz:5,grounded:true});animateKai(youthRiven,dt,{vx:0,vz:5.5,grounded:true});
    // The camera runs alongside the children before rising to reveal Vesper.
    if(sceneNum===0){
     target.set(base.x-6.6,3.35,base.z-7+travel*.8);
@@ -50,12 +52,15 @@ export function createCinematic({THREE,scene,camera,actor,rival,runner,route,ens
     look.set(base.x+.5,1.2,base.z+9+travel*.54);
    }
   }else{
+   animateKai(runner,dt,{grounded:true});animateKai(rival,dt,{grounded:true});
    const near=roof(0); 
    actor.position.set(near.x-1,1,near.z-5.5);
    rival.position.set(near.x+1.3,1,near.z-3.1);
    actor.rotation.y=rival.rotation.y=0;
+   const kaiHead=runner.getObjectByName('KaiAsset')?.getObjectByName('Head');
+   if(kaiHead)kaiHead.rotation.y+=Math.sin(Math.min(t,2)*.8)*.14;
    if(sceneNum===2){
-    target.set(near.x+4.8,2.65,near.z-8.7+Math.min(t,3)*.25);
+    target.set(near.x+4.8,2.65,near.z-1.7-Math.min(t,3)*.25);
     look.set(near.x,1.5,near.z-4+Math.min(t,3)*.4);
    }else{
     target.set(near.x+Math.sin(t*.33)*.6,3.6,near.z-11+Math.min(t,4)*.15);
