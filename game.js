@@ -29,15 +29,16 @@ const palettes={
   roof:[0xb16b55,0xc1815f,0x9d6052,0xc68b68],
   shutters:[0x607e78,0x526675,0x8b695e,0x658077],
   skin:['#edc7a5','#d8a47b','#b77c58','#89583e','#573728','#c99169'],
-  jacket:['#ad493b','#486b67','#cf945c','#454c62','#c5b6a5']
+  jacket:['#ad493b','#486b67','#cf945c','#454c62','#c5b6a5'],
+  hair:['#222428','#443128','#744329','#be9063','#8b3142']
 };
-let style={skin:2,jacket:0,hair:0,build:2};
+let style={skin:2,jacket:0,hair:0,haircolor:0,build:2};
 try {
   const stored=JSON.parse(localStorage.getItem('runners.style')||'null');
   if(stored) style={...style,...stored};
   best=Number(localStorage.getItem('runners.best')||0);
 } catch(e) {}
-const systems=createSystems({THREE,getScene:()=>scene,onLaunch:()=>newRun(),onMenu:()=>goMain(),onStyle:()=>applyStyle()});
+const systems=createSystems({THREE,getScene:()=>scene,getRunner:()=>runner,onLaunch:()=>newRun(),onMenu:()=>goMain(),onStyle:()=>applyStyle()});
 function mat(hex, emissive=0) {const m=new THREE.MeshStandardMaterial({color:hex,roughness:.95,metalness:0,flatShading:true});if(emissive){m.emissive=new THREE.Color(hex);m.emissiveIntensity=emissive}return m;}
 const materials=new Map();
 function m(hex){const k=String(hex);if(!materials.has(k))materials.set(k,mat(hex));return materials.get(k)}
@@ -386,7 +387,7 @@ function updateRival(dt){
 
 function paintHair(){
   const hair=runner.userData.hair;if(!hair)return;hair.clear();
-  const id=style.hair,ink=0x22252a,deep=0x25252a;
+  const id=style.hair,base=new THREE.Color(palettes.hair[clamp(style.haircolor,0,palettes.hair.length-1)]),ink=mat(base),deep=mat(base.clone().multiplyScalar(.75));
   // All six styles have a clear silhouette from the third-person camera.
   if(id===0){ // short tight curls
     for(let i=0;i<30;i++){
@@ -444,11 +445,12 @@ function applyStyle(){
   runner.userData.arms.forEach((a,i)=>a.shoulder.position.x=(i===0?-1:1)*(build===0?.41:build===1?.33:.37));
   runner.userData.legs.forEach((leg,i)=>leg.hip.position.x=(i===0?-1:1)*(build===1?.19:.17));
   paintHair();
+  systems.refreshAvatar();
   try{localStorage.setItem('runners.style',JSON.stringify(style))}catch(e){}
 }
 
 function bindStyles(){
-  for(const kind of ['skin','jacket','hair','build']){
+  for(const kind of ['skin','jacket','hair','haircolor','build']){
     document.querySelectorAll('[data-'+kind+']').forEach(btn=>{
       btn.addEventListener('click',()=>{
         style[kind]=Number(btn.dataset[kind]);updateSwatches();applyStyle();
@@ -458,7 +460,7 @@ function bindStyles(){
   updateSwatches();
 }
 function updateSwatches(){
-  for(const kind of ['skin','jacket','hair','build'])document.querySelectorAll('[data-'+kind+']').forEach(el=>el.classList.toggle('selected',Number(el.dataset[kind])===style[kind]));
+  for(const kind of ['skin','jacket','hair','haircolor','build'])document.querySelectorAll('[data-'+kind+']').forEach(el=>el.classList.toggle('selected',Number(el.dataset[kind])===style[kind]));
 }
 function notify(message,time=2){ui.toast.textContent=message;ui.toast.classList.add('visible');feedbackUntil=runClock+time}
 function sound(freq=300,span=.08,kind='sine',gain=.045){
@@ -710,6 +712,7 @@ function frame(now){
     p.group.position.y=1.97+Math.sin(now*.002+i)*.16;
   }
   renderer.render(scene,camera);
+  systems.drawPreview(dt);
 }
 function resize(){if(!renderer)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,isTouch?1.45:1.8));}
 addEventListener('resize',resize);
