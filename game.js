@@ -25,6 +25,7 @@ const route=[], obstacles=[], pickups=[], animated=[], groundShadows=[], speedPa
 let environmentArt=null,externalArt=null;
 const radius=0.38, temp=new THREE.Vector3(), targetCamera=new THREE.Vector3(), cameraAim=new THREE.Vector3();
 const state={x:0,y:1,z:-5.5,vx:0,vz:0,vy:0,grounded:true,coyote:0,buffer:0,slide:0,boost:0,runPhase:0,stepTimer:0,angle:0,airTime:0,stuntScore:0,combo:0,comboWindow:0,pendingStunt:0,trick:0,trickUsed:false,vault:0,landing:0,trickType:0,signalCharges:0};
+const menuView={yaw:.25,pitch:.25,zoom:7.8,pointer:null,x:0,y:0};
 const input={x:0,z:0,pointer:null,keys:new Set(),cameraYaw:0,cameraPitch:0,mouseDragging:false,mousePointer:null,mouseLastX:0,mouseLastY:0};
 // Read-only diagnostics for automated mobile control tests.
 window.__runnersDiagnostics=()=>({x:state.x,z:state.z,y:state.y,time:elapsed,grounded:state.grounded,paused,finished,level:systems.getLevel().id,wallet:systems.getWallet(),audio:systems.audioState(),stunts:state.stuntScore,pending:state.pendingStunt,trick:state.trick,vault:state.vault,cinema:!!(cinematic&&cinematic.isActive()),assets:externalArt?.stats()||null,signalCharges:state.signalCharges,boost:state.boost,cameraYaw:input.cameraYaw});
@@ -430,39 +431,43 @@ function makeCharacter(){
   const sh=ball(runner,0,-.99,0,.32,.02,.26,mat(0x182026,.2));sh.material.transparent=true;sh.material.opacity=.25;groundShadows.push(sh);
   const body=new THREE.Group();runner.add(body);runner.userData.body=body;
   // Lean athletic silhouette: tapered jacket, hood, straps, slim trousers.
-  const torso=mesh(body,new THREE.CylinderGeometry(.32,.27,.86,18),m(palettes.jacket[style.jacket]),0,.69,0,1,1,1);
+  const torso=mesh(body,new THREE.CylinderGeometry(.29,.23,.80,24),m(palettes.jacket[style.jacket]),0,.69,0,1,1,1);
   torso.rotation.z=.035;runner.userData.torso=torso;
   const waist=tube(body,0,.24,0,.29,.22,.24,0x343f49);
-  const hood=ball(body,0,1.02,-.21,.36,.3,.23,0x7b3b33);runner.userData.hood=hood;
+  const hood=ball(body,0,1.03,-.16,.27,.13,.15,0x7b3b33);runner.userData.hood=hood;
   const chest=block(body,-.14,.69,.267,.045,.49,.024,0x853f34);chest.rotation.z=-.055;
   const seam=block(body,.14,.69,.267,.045,.49,.024,0x853f34);seam.rotation.z=.055;
   block(body,0,.33,.02,.39,.12,.34,0x30363b);
-  const bag=ball(body,0,.59,-.38,.32,.43,.18,0x343a3b);runner.userData.bag=bag;
-  block(body,0,.60,-.54,.31,.29,.04,0x866657);
-  for(const side of [-1,1]){const strap=mesh(body,new THREE.CapsuleGeometry(.037,.55,3,7),0x374147,side*.25,.66,-.14);strap.rotation.z=side*.16;}
+  const bag=new THREE.Group();body.add(bag);runner.userData.bag=bag;
+  mesh(bag,new THREE.CapsuleGeometry(.20,.28,6,12),0x343a3b,0,.65,-.30,1,1,.56);
+  mesh(bag,new THREE.CapsuleGeometry(.14,.08,4,10),0x866657,0,.53,-.43,1,1,.28);
+  line(bag,[-.12,.98,-.30],[.12,.98,-.30],0x202b30,.022);
+  for(const side of [-1,1]){const strap=mesh(bag,new THREE.CapsuleGeometry(.037,.55,3,7),0x374147,side*.25,.66,-.14);strap.rotation.z=side*.16;}
   const neck=tube(body,0,1.19,0,.16,.16,.16,0xa26f50);runner.userData.neck=neck;
-  const face=ball(body,0,1.52,.08,.255,.32,.25,0xa26f50);runner.userData.face=face;
-  const earL=ball(body,-.246,1.52,.075,.035,.069,.054,0xa26f50);
-  const earR=ball(body,.246,1.52,.075,.035,.069,.054,0xa26f50);
+  const head=new THREE.Group();body.add(head);
+  head.scale.setScalar(.84);head.position.y=.24;
+  const face=ball(head,0,1.52,.08,.255,.32,.25,0xa26f50);runner.userData.face=face;
+  const earL=ball(head,-.246,1.52,.075,.035,.069,.054,0xa26f50);
+  const earR=ball(head,.246,1.52,.075,.035,.069,.054,0xa26f50);
   runner.userData.ears=[earL,earR];
   // Nose and eyes are intentionally understated at game camera distance.
-  const nose=ball(body,0,1.50,.31,.033,.038,.042,0xa26f50);runner.userData.nose=nose;
-  const eyeL=ball(body,-.115,1.6,.294,.041,.024,.018,0xe9d9ca);
-  const eyeR=ball(body,.115,1.6,.294,.041,.024,.018,0xe9d9ca);
+  const nose=ball(head,0,1.50,.31,.033,.038,.042,0xa26f50);runner.userData.nose=nose;
+  const eyeL=ball(head,-.115,1.6,.294,.041,.024,.018,0xe9d9ca);
+  const eyeR=ball(head,.115,1.6,.294,.041,.024,.018,0xe9d9ca);
   runner.userData.eyes=[eyeL,eyeR];
   runner.userData.pupils=[];
   for(const side of [-1,1]){
     // Eyelids, brows and individually visible pupils read well in the large loadout preview.
-    const pupil=ball(body,side*.115,1.607,.315,.017,.019,.012,0x322922);runner.userData.pupils.push(pupil);
-    ball(body,side*.115,1.607,.327,.009,.012,.007,0x121718);
-    const brow=ball(body,side*.113,1.692,.3,.067,.016,.014,0x272324);
+    const pupil=ball(head,side*.115,1.607,.315,.017,.019,.012,0x322922);runner.userData.pupils.push(pupil);
+    ball(head,side*.115,1.607,.327,.009,.012,.007,0x121718);
+    const brow=ball(head,side*.113,1.692,.3,.067,.016,.014,0x272324);
     brow.rotation.z=-side*.08;
-    ball(body,side*.2,1.47,.247,.063,.031,.021,0x9b6756);
-    ball(body,side*.256,1.50,.06,.034,.058,.033,0xa97b5e);
+    ball(head,side*.2,1.47,.247,.063,.031,.021,0x9b6756);
+    ball(head,side*.256,1.50,.06,.034,.058,.033,0xa97b5e);
   }
-  ball(body,0,1.408,.307,.064,.013,.008,0x7c5147);
-  ball(body,0,1.397,.31,.05,.009,.008,0xc38675);
-  const glasses=new THREE.Group();body.add(glasses);
+  ball(head,0,1.408,.307,.064,.013,.008,0x7c5147);
+  ball(head,0,1.397,.31,.05,.009,.008,0xc38675);
+  const glasses=new THREE.Group();head.add(glasses);
   for(const side of [-1,1]){
     mesh(glasses,new THREE.TorusGeometry(.11,.015,7,23),0x272d30,side*.117,1.60,.35);
     const lens=ball(glasses,side*.117,1.60,.348,.083,.071,.006,mat(0x8bc5c6));
@@ -470,10 +475,10 @@ function makeCharacter(){
     block(glasses,side*.26,1.603,.296,.14,.019,.027,0x24292b);
   }
   block(glasses,0,1.616,.354,.07,.022,.025,0x24292b);
-  const headband=new THREE.Group();body.add(headband);
+  const headband=new THREE.Group();head.add(headband);
   const band=ball(headband,0,1.814,.045,.285,.064,.256,0x994539);
   ball(headband,0,1.81,.293,.18,.04,.019,0xdaab81);
-  const goggles=new THREE.Group();body.add(goggles);
+  const goggles=new THREE.Group();head.add(goggles);
   block(goggles,0,1.61,.34,.46,.13,.046,0x282b2e);
   for(const side of [-1,1]){
     const glass=ball(goggles,side*.116,1.61,.371,.098,.05,.017,0x77b9c7);
@@ -482,13 +487,13 @@ function makeCharacter(){
   runner.userData.accessories=[null,glasses,headband,goggles];
   block(body,0,.84,.27,.17,.07,.06,0xe4b07a);
   const zipper=block(body,0,.64,.322,.035,.48,.016,0xe8b988);runner.userData.zipper=zipper;
-  const hair=new THREE.Group();body.add(hair);runner.userData.hair=hair;
+  const hair=new THREE.Group();head.add(hair);runner.userData.hair=hair;
   const arms=[];
   for(const side of [-1,1]){
     const shoulder=new THREE.Group();shoulder.position.set(side*.37,1.02,0);body.add(shoulder);
-    const upper=mesh(shoulder,new THREE.CapsuleGeometry(.145,.29,5,11),palettes.jacket[style.jacket],side*.025,-.26,0);
+    const upper=mesh(shoulder,new THREE.CapsuleGeometry(.125,.29,6,14),palettes.jacket[style.jacket],side*.025,-.26,0);
     const elbow=new THREE.Group();elbow.position.set(side*.04,-.52,0);shoulder.add(elbow);
-    mesh(elbow,new THREE.CapsuleGeometry(.12,.21,5,11),0x323941,0,-.19,.01);
+    mesh(elbow,new THREE.CapsuleGeometry(.105,.26,6,14),0x323941,0,-.19,.01);
     ball(elbow,0,-.44,.01,.12,.14,.12,0xa26f50);
     arms.push({shoulder,elbow,upper});
   }
@@ -615,9 +620,12 @@ function paintHair(){
     ball(hair,0,1.66,-.245,.23,.33,.18,deep);
   }else if(id===3){ // full round afro
     ball(hair,0,1.93,-.03,.38,.33,.37,deep);
-    for(let i=0;i<28;i++){
-      const a=i*2.39996,r=.13+.26*Math.sqrt((i+.5)/28);
-      ball(hair,Math.cos(a)*r,1.92+.12*Math.sin(i*2),-.02+Math.sin(a)*r,.12,.12,.12,ink);
+    // Fibonacci coverage of an ellipsoid: curls follow the crown, never a flat layer.
+    for(let i=0;i<110;i++){
+      const y=1-2*(i+.5)/110,a=i*2.399963,r=Math.sqrt(1-y*y);
+      const z=Math.sin(a)*r;
+      if(y<-.42&&z>.25)continue; // keep the face clear
+      ball(hair,Math.cos(a)*r*.335,1.91+y*.29,-.035+z*.32,.073,.076,.072,i%3?ink:deep);
     }
   }else if(id===4){ // long braids: distinct strands
     ball(hair,0,1.79,-.07,.28,.13,.26,deep);
@@ -838,7 +846,7 @@ function bindControls(){
   const canvas=renderer.domElement;
   canvas.addEventListener('contextmenu',e=>e.preventDefault());
   canvas.addEventListener('pointerdown',e=>{
-    if(!matchMedia('(pointer:fine)').matches||!started||paused||finished)return;
+    if(!started||paused||finished)return;
     if(e.button!==0&&e.button!==2)return;
     input.mouseDragging=true;input.mousePointer=e.pointerId;
     input.mouseLastX=e.clientX;input.mouseLastY=e.clientY;
@@ -857,6 +865,23 @@ function bindControls(){
   const stopMouse=e=>{if(input.mousePointer===e.pointerId){input.mouseDragging=false;input.mousePointer=null;}};
   canvas.addEventListener('pointerup',stopMouse);canvas.addEventListener('pointercancel',stopMouse);
   canvas.addEventListener('dblclick',()=>{if(started&&!paused&&matchMedia('(pointer:fine)').matches)canvas.requestPointerLock?.();});
+  ui.splash.addEventListener('pointerdown',e=>{
+    if(e.target.closest('button,#customize-panel,.menu')||e.clientX<innerWidth*.52)return;
+    menuView.pointer=e.pointerId;menuView.x=e.clientX;menuView.y=e.clientY;
+    ui.splash.setPointerCapture(e.pointerId);
+  });
+  ui.splash.addEventListener('pointermove',e=>{
+    if(menuView.pointer!==e.pointerId)return;
+    menuView.yaw+=(e.clientX-menuView.x)*.008;
+    menuView.pitch=clamp(menuView.pitch+(e.clientY-menuView.y)*.006,-.3,.8);
+    menuView.x=e.clientX;menuView.y=e.clientY;
+  });
+  const releaseMenu=()=>menuView.pointer=null;
+  ui.splash.addEventListener('pointerup',releaseMenu);ui.splash.addEventListener('pointercancel',releaseMenu);
+  ui.splash.addEventListener('wheel',e=>{
+    if(e.target.closest('.menu,#customize-panel'))return;
+    e.preventDefault();menuView.zoom=clamp(menuView.zoom+e.deltaY*.006,5.8,11);
+  },{passive:false});
   ui.start.addEventListener('click',()=>systems.startStory());
   ui.pause.addEventListener('click',togglePause);
   $('retry').addEventListener('click',newRun);
@@ -994,7 +1019,7 @@ function animateCharacter(dt){
   const phase=state.runPhase,stride=moving&&state.grounded&&!state.slide?Math.min(.95,speed*.078):0;
   const landCompression=state.landing>0?Math.sin((.2-state.landing)/.2*Math.PI)*.18:0;
   const body=runner.userData.body;
-  body.position.y=smooth(body.position.y,(state.grounded&&moving&&!state.slide?Math.abs(Math.sin(phase))*0.065:0)-(state.slide>0?.3:0)-landCompression,15,dt);
+  body.position.y=smooth(body.position.y,(!moving?Math.sin(runClock*2)*.012:0)+(state.grounded&&moving&&!state.slide?Math.abs(Math.sin(phase))*0.065:0)-(state.slide>0?.3:0)-landCompression,15,dt);
   const phaseTrick=state.trick>0?(1-state.trick/.68):0;
   const spin=phaseTrick*Math.PI*2*(state.trickType===2?1:-1);
   body.rotation.x=smooth(body.rotation.x,state.trick>0&&state.trickType!==1?spin:(state.vault>0?-.55:state.slide>0?.7:(moving?.16:0)),state.trick>0?25:10,dt);
@@ -1036,8 +1061,8 @@ function frame(now){
   if(!filmPlaying){
    if(menuOpen){
      // A quiet moving establishing shot: let the authored city occupy the right side of the menu.
-     targetCamera.set(state.x-4.9+Math.sin(now*.00022)*.45,state.y+4.2,state.z-12.8);
-     cameraAim.set(state.x+.55,state.y+2.0,state.z+16);
+     targetCamera.set(state.x+Math.sin(menuView.yaw)*menuView.zoom,state.y+1.4+menuView.pitch*3,state.z+Math.cos(menuView.yaw)*menuView.zoom);
+     cameraAim.set(state.x-(narrow?0:2.2),state.y+.6,state.z);
    }else{
      const yaw=input.cameraYaw,cos=Math.cos(yaw),sin=Math.sin(yaw);
      targetCamera.set(state.x*.94-sin*back,state.y+up+input.cameraPitch*2.9,state.z-cos*back);

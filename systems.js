@@ -47,7 +47,7 @@ function loadSave(){
 }
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}){
- let save=loadSave(),level=0,tab='story',scene=null,ghost=null,ghostFrame=[],ghostIndex=0,record=[],lastRecord=-1,cutsceneIndex=0,cutsceneTimer=null,audio=null,master=null,audioStep=0,nextBeat=0,active=false,audioEnabled=false,previewRenderer=null,previewScene=null,previewAvatar=null,previewCamera=null,previewClock=0,previewYaw=.4,previewZoom=3.75,previewDrag=null,previewStill=0;
+ let save=loadSave(),level=0,tab='story',scene=null,ghost=null,ghostFrame=[],ghostIndex=0,record=[],lastRecord=-1,cutsceneIndex=0,cutsceneTimer=null,audio=null,master=null,audioStep=0,nextBeat=0,active=false,audioEnabled=false,previewRenderer=null,previewScene=null,previewAvatar=null,previewCamera=null,previewClock=0,previewYaw=.4,previewZoom=5.8,previewDrag=null,previewStill=0;
  const $=id=>document.getElementById(id);
  const persist=()=>{try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch(e){console.warn('RUNNERS save could not be stored',e)}};
  const getLevel=()=>LEVELS[level];
@@ -145,17 +145,26 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   // Dedicated character studio: preview and controls never compete for a narrow sidebar.
   const stage=document.createElement('section');stage.id='studio-stage';
   const stageHead=document.createElement('div');stageHead.className='studio-head';
-  stageHead.innerHTML='<span class="eyebrow">VESPER CITY / RUNNERS</span><h2>KAI<span>.</span></h2><p>YOUR RUNNER. YOUR ROUTE.</p>';
+  stageHead.innerHTML='<span class="eyebrow">VESPER CITY / RUNNERS</span><h2>KAI<span>.</span></h2><p>DRAG TO ORBIT · SCROLL TO ZOOM</p>';
   stage.appendChild(stageHead);stage.appendChild(preview);
   const controls=document.createElement('section');controls.id='studio-controls';
   const oldControls=[...aside.children].filter(el=>el!==stage);
   for(const child of oldControls)controls.appendChild(child);
   const actions=document.createElement('div');actions.id='studio-actions';
-  actions.innerHTML='<button id="studio-back" class="secondary">← BACK TO MENU</button><button id="studio-race" class="primary">RACE WITH THIS LOOK ↗</button>';
+  actions.innerHTML='<button id="studio-back" class="secondary">← BACK TO MENU</button><button id="studio-race" class="primary">PLAY WITH THIS LOOK</button>';
   controls.appendChild(actions);
   // Mount Back above the two studio panels, not inside their clipping/scroll contexts.
   const studioBack=actions.querySelector('#studio-back');
-  aside.append(stage,controls,studioBack);
+  aside.append(stage,controls,actions);
+  const categories=document.createElement('nav');categories.id='studio-categories';categories.setAttribute('aria-label','Customization categories');
+  const groups=[['Body',build],['Face',shape],['Hair',aside.querySelector('[data-hair="0"]').closest('.swatches')],['Outfit',aside.querySelector('[data-jacket="0"]').closest('.swatches')],['Accessories',gearOptions]];
+  for(const [label,target] of groups){
+    const button=document.createElement('button');button.textContent=label;button.type='button';
+    button.addEventListener('click',()=>{controls.scrollTo({top:target.offsetTop-controls.offsetTop-12,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});});
+    categories.appendChild(button);
+  }
+  aside.prepend(categories);
+  actions.prepend(studioBack);
   $('studio-back').addEventListener('click',()=>setTab('story'));
   $('studio-race').addEventListener('click',()=>startStory());
   const hint=document.createElement('div');hint.className='hub-hint';
@@ -175,7 +184,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
     }
   });
   document.addEventListener('keydown',e=>{
-    if($('splash').hidden||e.repeat||!['ArrowLeft','ArrowRight'].includes(e.code))return;
+    if(e.target.closest('#avatar-preview')||$('splash').hidden||e.repeat||!['ArrowLeft','ArrowRight'].includes(e.code))return;
     const pages=['story','races','upgrades','customize'];
     const pos=pages.indexOf(tab)+(e.code==='ArrowRight'?1:-1);
     setTab(pages[clamp(pos,0,pages.length-1)]);
@@ -392,31 +401,58 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
    const w=Math.max(275,Math.min(530,Math.round(innerWidth*.46)));
    const h=Math.max(210,Math.min(440,Math.round(innerHeight*.80)));
    previewCamera=new THREE.PerspectiveCamera(35,w/h,.1,100);
-   previewCamera.position.set(0,1.56,previewZoom);previewCamera.lookAt(0,.85,0);
+   previewCamera.position.set(0,.7,previewZoom);previewCamera.lookAt(0,.55,0);
    previewRenderer=new THREE.WebGLRenderer({alpha:true,antialias:false,powerPreference:'low-power'});
    previewRenderer.setPixelRatio(1);
    previewRenderer.setPixelRatio(Math.min(devicePixelRatio,1.25));
    previewRenderer.setSize(w,h,false);
    previewRenderer.setClearColor(0x000000,0);
    const host=$('avatar-preview');host.appendChild(previewRenderer.domElement);
+   host.tabIndex=0;
+   let pitch=0,pinch=0;
+   const pointers=new Map();
+   const pose=()=>{previewCamera.position.set(0,.7+pitch,previewZoom);previewCamera.lookAt(0,.55,0)};
+   new ResizeObserver(()=>{
+     const {width,height}=host.getBoundingClientRect();if(!width||!height)return;
+     previewCamera.aspect=width/height;previewCamera.updateProjectionMatrix();
+     previewRenderer.setSize(width,height,false);
+   }).observe(host);
+   host.addEventListener('keydown',e=>{
+     if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-'].includes(e.key))return;
+     e.preventDefault();e.stopPropagation();
+     previewYaw+=e.key==='ArrowLeft'?-.15:e.key==='ArrowRight'?.15:0;
+     pitch=clamp(pitch+(e.key==='ArrowUp'?.15:e.key==='ArrowDown'?-.15:0),-.6,1.4);
+     previewZoom=clamp(previewZoom+(e.key==='+'?-.3:e.key==='-'?.3:0),4.8,8);
+     pose();previewAvatar.rotation.y=previewYaw;previewStill=6;
+   });
    host.addEventListener('pointerdown',e=>{
+     e.stopPropagation();
+     pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});pinch=0;
      previewDrag={id:e.pointerId,x:e.clientX,y:e.clientY};
      previewStill=5;
      host.setPointerCapture(e.pointerId);
    });
    host.addEventListener('pointermove',e=>{
+     if(!pointers.has(e.pointerId))return;
+     pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+     if(pointers.size===2){
+       const [a,b]=[...pointers.values()],distance=Math.hypot(a.x-b.x,a.y-b.y);
+       if(pinch)previewZoom=clamp(previewZoom+(pinch-distance)*.012,4.8,8);
+       pinch=distance;pose();previewDrag=null;return;
+     }
      if(!previewDrag||previewDrag.id!==e.pointerId)return;
+     pitch=clamp(pitch+(e.clientY-previewDrag.y)*.008,-.6,1.4);pose();
      previewYaw+=(e.clientX-previewDrag.x)*.011;
      previewDrag.x=e.clientX;previewDrag.y=e.clientY;
      previewStill=6;
      if(previewAvatar)previewAvatar.rotation.y=previewYaw;
    });
-   const release=e=>{if(previewDrag?.id===e.pointerId)previewDrag=null};
+   const release=e=>{pointers.delete(e.pointerId);pinch=0;if(previewDrag?.id===e.pointerId)previewDrag=null};
    host.addEventListener('pointerup',release);host.addEventListener('pointercancel',release);
    host.addEventListener('wheel',e=>{
      e.preventDefault();
-     previewZoom=clamp(previewZoom+e.deltaY*.003,2.4,5.6);
-     previewCamera.position.z=previewZoom;
+     previewZoom=clamp(previewZoom+e.deltaY*.003,4.8,8);
+     pose();
      previewStill=6;
    },{passive:false});
    refreshAvatar();
@@ -435,6 +471,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   previewClock+=dt;
   if(previewClock<1/25)return;
   if(previewStill>0)previewStill=Math.max(0,previewStill-previewClock);else{previewYaw+=previewClock*.16;previewAvatar.rotation.y=previewYaw;}
+  previewAvatar.children[1].position.y=Math.sin(performance.now()*.002)*.012;
   previewClock=0;
   previewRenderer.render(previewScene,previewCamera);
  }
