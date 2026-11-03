@@ -51,6 +51,47 @@ function mat(hex, emissive=0) {const m=new THREE.MeshStandardMaterial({color:hex
 const materials=new Map();
 function m(hex){const k=String(hex);if(!materials.has(k))materials.set(k,mat(hex));return materials.get(k)}
 const boxGeo=new THREE.BoxGeometry(1,1,1), sphereGeo=new THREE.SphereGeometry(1,20,14), cylinderGeo=new THREE.CylinderGeometry(1,1,1,14), planeGeo=new THREE.PlaneGeometry(1,1);
+
+let roofSurfaceTex=null,facadeSurfaceTex=null;
+function texturePattern(type){
+ const c=document.createElement('canvas');c.width=c.height=256;
+ const ctx=c.getContext('2d');ctx.fillStyle=type==='roof'?'#e9dccb':'#e8dfd5';ctx.fillRect(0,0,256,256);
+ // Seeded, intentionally subtle grain; no external photos or heavy shader pipeline.
+ for(let i=0;i<3000;i++){
+  const g=Math.floor(rnd()*255),x=rnd()*256,y=rnd()*256;
+  ctx.fillStyle=type==='roof'?'rgba(79,51,43,'+(rnd()*.042)+')':'rgba(68,53,48,'+(rnd()*.024)+')';
+  ctx.fillRect(x,y,type==='roof'?2:1,1);
+ }
+ if(type==='roof'){
+  ctx.lineWidth=1.2;ctx.strokeStyle='rgba(76,53,49,.24)';
+  for(let y=0;y<=256;y+=32){
+   ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(256,y);ctx.stroke();
+   for(let x=(y/32)%2?0:16;x<=256;x+=32){
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+32);ctx.stroke();
+   }
+  }
+ }else{
+  for(let i=0;i<65;i++){
+   const x=rnd()*256,y=rnd()*256;
+   ctx.fillStyle='rgba(99,79,68,.035)';
+   ctx.fillRect(x,y,5+rnd()*30,.4+rnd()*2.2);
+  }
+ }
+ const tex=new THREE.CanvasTexture(c);
+ tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+ tex.repeat.set(type==='roof'?7:3,type==='roof'?10:4);
+ tex.anisotropy=2;return tex;
+}
+const facadeMaterials=new Map(),roofMaterials=new Map();
+function texturedMaterial(color,kind){
+ const cache=kind==='roof'?roofMaterials:facadeMaterials;
+ const key=String(color);if(!cache.has(key)){
+  const map=kind==='roof'?(roofSurfaceTex||(roofSurfaceTex=texturePattern('roof'))):(facadeSurfaceTex||(facadeSurfaceTex=texturePattern('facade')));
+  cache.set(key,new THREE.MeshStandardMaterial({color,roughness:.99,metalness:0,map}));
+ }
+ return cache.get(key);
+}
+
 function mesh(parent,geo,material,x=0,y=0,z=0,sx=1,sy=1,sz=1) {
   const o=new THREE.Mesh(geo,typeof material==='number'?m(material):material);
   o.position.set(x,y,z);o.scale.set(sx,sy,sz);parent.add(o);return o;
@@ -96,8 +137,8 @@ function boot() {
 function roof(index,x,z,w,length){
   const clay=pick(palettes.roof),stone=pick(palettes.stone),g=new THREE.Group();world.add(g);
   const top=0, depth=13+rnd()*5;
-  block(g,x,-depth/2,z,w,depth,length,stone);
-  block(g,x,-.12,z,w+.35,.29,length+.35,clay);
+  block(g,x,-depth/2,z,w,depth,length,texturedMaterial(stone,'facade'));
+  block(g,x,-.12,z,w+.35,.29,length+.35,texturedMaterial(clay,'roof'));
   block(g,x,-.21,z,w+.55,.15,length+.55,0x754f49);
   const border=0x815448;
   for(const dir of [-1,1]){
@@ -136,7 +177,7 @@ function surrounding(){
     const side=n%2?-1:1,xx=side*(12+rnd()*12),w=5+rnd()*7,d=5+rnd()*7,h=12+rnd()*14;
     const g=new THREE.Group();world.add(g);
     const sandstone=pick(palettes.stone),upper=2+rnd()*8;
-    block(g,xx,upper-h/2,z,w,h,d,sandstone);
+    block(g,xx,upper-h/2,z,w,h,d,texturedMaterial(sandstone,'facade'));
     block(g,xx,upper+.08,z,w+.4,.25,d+.4,pick(palettes.roof));
     if(rnd()>.35){
       const sideX=xx-side*(w/2+.03);
