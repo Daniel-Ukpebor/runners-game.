@@ -145,9 +145,15 @@
   <button id="pause" hidden aria-label="Pause game">Ⅱ</button>
   <button id="sound-hud" hidden aria-label="Toggle race music and sound">♫</button>
   <div id="toast" role="status"></div>
+  <div id="desktop-hint" hidden aria-label="Desktop controls">
+    <strong>WASD</strong> MOVE <span>·</span> <strong>SPACE</strong> JUMP <span>·</span> <strong>C</strong> SLIDE
+    <span>·</span> <strong>F</strong> TRICK <span>·</span> <strong>Q</strong> PULSE
+    <span>·</span> <strong>R</strong> RESTART <span>·</span> <strong>DRAG MOUSE</strong> LOOK
+  </div>
   <div id="controls" hidden aria-label="Touchscreen controls">
     <div id="stick" role="group" aria-label="Move character in any direction"><div id="thumb"></div></div>
     <button id="trick" class="action" aria-label="Perform aerial trick for style points">TRICK</button>
+    <button id="pulse" class="action" aria-label="Use collected signal for a speed burst" disabled>PULSE</button>
     <button id="slide" class="action" aria-label="Slide under beams">SLIDE</button>
     <button id="jump" class="action" aria-label="Jump across rooftops">JUMP</button>
     <div id="control-tip">HOLD FORWARD TO SPRINT</div>
@@ -204,6 +210,6 @@
   </section>
   <div id="error" hidden><div><h2>RUNNERS COULDN'T START</h2><p id="error-message"></p><button class="primary" id="retry" onclick="location.reload()">RETRY</button></div></div>
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js"}}</script>
-  <script type="module" src="./game.js?v=7"></script>
+  <script type="module" src="./game.js?v=8"></script>
 </body>
 </html>
