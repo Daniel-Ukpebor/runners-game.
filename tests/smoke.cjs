@@ -2,7 +2,7 @@ const { chromium } = require('playwright-core');
 const fs = require('fs');
 (async () => {
  const browser = await chromium.launch({
-  executablePath:'/usr/bin/google-chrome',
+  executablePath:process.env.CHROME_PATH||(fs.existsSync('/usr/bin/google-chrome')?'/usr/bin/google-chrome':'/usr/bin/chromium'),
   headless:true,
   args:['--no-sandbox','--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']
  });

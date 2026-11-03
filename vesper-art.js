@@ -23,7 +23,7 @@ export function buildVesperLandmarks({THREE,world,route,chapter=0}) {
     ctx.font='bold 64px Georgia,serif';ctx.fillText(text.toUpperCase(),256,67);
     const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
     const obj=new THREE.Mesh(new THREE.PlaneGeometry(width,height),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}));
-    obj.position.set(x,y,z);obj.rotation.y=face;world.add(obj);artworks.push(obj);
+    obj.position.set(x,y,z);obj.rotation.y=face===0?Math.PI:face;world.add(obj);artworks.push(obj);
   }
   function addArch(centerX,centerZ,width,stoneColor=cream){
     const rx=width*.5,baseY=3.15;
