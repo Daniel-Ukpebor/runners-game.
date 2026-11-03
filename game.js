@@ -27,11 +27,12 @@ const radius=0.38, temp=new THREE.Vector3(), targetCamera=new THREE.Vector3(), c
 const state={x:0,y:1,z:-5.5,vx:0,vz:0,vy:0,grounded:true,coyote:0,buffer:0,slide:0,boost:0,runPhase:0,stepTimer:0,angle:0,airTime:0,stuntScore:0,combo:0,comboWindow:0,pendingStunt:0,trick:0,trickUsed:false,vault:0,landing:0,trickType:0,signalCharges:0};
 const input={x:0,z:0,pointer:null,keys:new Set(),cameraYaw:0,cameraPitch:0,mouseDragging:false,mousePointer:null,mouseLastX:0,mouseLastY:0};
 // Read-only diagnostics for automated mobile control tests.
-window.__runnersDiagnostics=()=>({x:state.x,z:state.z,y:state.y,time:elapsed,grounded:state.grounded,paused,finished,level:systems.getLevel().id,wallet:systems.getWallet(),audio:systems.audioState(),stunts:state.stuntScore,pending:state.pendingStunt,trick:state.trick,vault:state.vault,cinema:!!(cinematic&&cinematic.isActive()),assets:externalArt?.stats()||null,signalCharges:state.signalCharges,boost:state.boost});
+window.__runnersDiagnostics=()=>({x:state.x,z:state.z,y:state.y,time:elapsed,grounded:state.grounded,paused,finished,level:systems.getLevel().id,wallet:systems.getWallet(),audio:systems.audioState(),stunts:state.stuntScore,pending:state.pendingStunt,trick:state.trick,vault:state.vault,cinema:!!(cinematic&&cinematic.isActive()),assets:externalArt?.stats()||null,signalCharges:state.signalCharges,boost:state.boost,cameraYaw:input.cameraYaw});
 if(location.hostname==='127.0.0.1'||location.hostname==='localhost'){
   window.__runnersTestApi={
     complete:()=>{if(!started)throw Error('No active race');state.z=route.at(-1).z+7.2;state.y=1;state.grounded=true;},
-    obstacle:(index)=>{if(!started)throw Error('No active race');const o=obstacles[index];state.x=o.x;state.y=1;state.z=o.z-2.2;state.vx=state.vy=0;state.vz=6;state.grounded=true;return {kind:o.kind,z:o.z};}
+    obstacle:(index)=>{if(!started)throw Error('No active race');const o=obstacles[index];state.x=o.x;state.y=1;state.z=o.z-2.2;state.vx=state.vy=0;state.vz=6;state.grounded=true;return {kind:o.kind,z:o.z};},
+    signal:()=>{if(!started)throw Error('No active race');state.signalCharges++;updatePulseHud();return state.signalCharges;}
   };
 }
 const palettes={
