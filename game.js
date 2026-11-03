@@ -1,5 +1,6 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js';
-import {createSystems,LEVELS} from './systems.js?v=3';
+import {createSystems,LEVELS} from './systems.js?v=4';
+import {createCinematic} from './cinematic.js?v=4';
 
 const $ = id => document.getElementById(id);
 const ui = {
@@ -15,7 +16,7 @@ const ui = {
 const isTouch = matchMedia('(pointer:coarse)').matches;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const THREE_COLOR = 0x232323;
-let renderer, camera, scene, world, actor, runner, rival, rivalArms=[], rivalLegs=[], skyDomeMaterial, keySun, skyHem, runClock=0, started=false, paused=false;
+let renderer, camera, scene, world, actor, runner, rival, rivalArms=[], rivalLegs=[], cinematic=null, skyDomeMaterial, keySun, skyHem, runClock=0, started=false, paused=false;
 let startAt=0, elapsed=0, finished=false, collected=0, falls=0, feedbackUntil=0, flashUntil=0;
 let checkpointIndex=0, best=0, volume=true, audioContext=null, builtLevel=0;
 const route=[], obstacles=[], pickups=[], animated=[], groundShadows=[];
@@ -85,7 +86,7 @@ function boot() {
   keySun=new THREE.DirectionalLight(0xffbd84,2.55);keySun.position.set(-34,45,70);scene.add(keySun);
   const ambient=new THREE.DirectionalLight(0xd5dfea,.55);ambient.position.set(20,20,-20);scene.add(ambient);
   ball(scene,-65,33,148,9,9,1,mat(0xffd3a0,.65));
-  buildDistrict();optimizeDistrict();makeCharacter();makeRival();tuneDistrict();applyStyle();systems.init();bindControls();resize();
+  buildDistrict();optimizeDistrict();makeCharacter();makeRival();tuneDistrict();applyStyle();systems.init();cinematic=createCinematic({THREE,scene,camera,actor,rival,runner,route,ensureCourse:()=>{if(builtLevel!==systems.levelIndex())rebuildCourse()}});bindControls();resize();
   ui.best.textContent=systems.getBest()===null?'—':Number(systems.getBest()).toFixed(1)+'s';
   camera.position.set(0,5,-15);
   cameraAim.set(0,1,6);
@@ -735,14 +736,17 @@ function frame(now){
     simulation(1/60);simCarry-=1/60;steps++;
   }
   animateCharacter(dt);updateRival(dt);
+  const filmPlaying=cinematic&&cinematic.tick(now,dt);
   const narrow=innerHeight>innerWidth;
   const back=narrow?8.5:6.1,up=narrow?4.8:3.45,ahead=narrow?6.3:6.8;
   const followX=state.x*.82;
-  targetCamera.set(followX, state.y+up, state.z-back);
-  camera.position.lerp(targetCamera,1-Math.exp(-3.6*dt));
-  cameraAim.set(state.x*.95,state.y+(narrow?1.3:1.2),state.z+ahead);
-  camera.lookAt(cameraAim);
-  const goalFov=(narrow?65:67)+Math.max(0,Math.hypot(state.vx,state.vz)-7)*.48;camera.fov=smooth(camera.fov,goalFov,2,dt);camera.updateProjectionMatrix();
+  if(!filmPlaying){
+   targetCamera.set(followX, state.y+up, state.z-back);
+   camera.position.lerp(targetCamera,1-Math.exp(-3.6*dt));
+   cameraAim.set(state.x*.95,state.y+(narrow?1.3:1.2),state.z+ahead);
+   camera.lookAt(cameraAim);
+   const goalFov=(narrow?65:67)+Math.max(0,Math.hypot(state.vx,state.vz)-7)*.48;camera.fov=smooth(camera.fov,goalFov,2,dt);camera.updateProjectionMatrix();
+  }
   for(const [i,p] of pickups.entries())if(!p.taken){
     p.group.rotation.y+=dt*1.1;
     p.group.position.y=1.97+Math.sin(now*.002+i)*.16;
