@@ -138,7 +138,34 @@ const fs = require('fs');
  }));
  console.log('FINISH REWARDS:',JSON.stringify(finishData));
  if(finishData.wallet<60||!finishData.result.includes('CREDITS'))throw Error('Finishing did not earn progression rewards');
- await page.locator('#modal-secondary').click();
+ // Regression: NEXT CHAPTER must dismiss the previous results modal
+ // and hide all race HUD while the transparent 3D story intro plays.
+ if((await page.locator('#modal-tertiary').textContent())!=='NEXT CHAPTER')throw Error('Next chapter button missing after victory');
+ await page.locator('#modal-tertiary').click();
+ await page.locator('#story-overlay:not([hidden])').waitFor();
+ const nextState=await page.evaluate(()=>({
+   modalHidden:document.querySelector('#modal').hidden,
+   hudHidden:document.querySelector('#hud').hidden,
+   controlsHidden:document.querySelector('#controls').hidden,
+   pauseHidden:document.querySelector('#pause').hidden,
+   menuHidden:document.querySelector('#splash').hidden,
+   overlayVisible:!document.querySelector('#story-overlay').hidden
+ }));
+ console.log('NEXT CHAPTER TRANSITION:',JSON.stringify(nextState));
+ if(!nextState.modalHidden||!nextState.hudHidden||!nextState.controlsHidden||!nextState.pauseHidden||!nextState.menuHidden||!nextState.overlayVisible)
+  throw Error('Old results or game UI is overlapping next chapter intro');
+ await page.screenshot({path:'test-results/runners-next-chapter-clean.png'});
+ await page.locator('#story-skip').click();
+ const nextRace=await page.evaluate(()=>({
+  level:window.__runnersDiagnostics().level,
+  modalHidden:document.querySelector('#modal').hidden,
+  storyHidden:document.querySelector('#story-overlay').hidden,
+  controlsVisible:!document.querySelector('#controls').hidden
+ }));
+ if(nextRace.level!=='market'||!nextRace.modalHidden||!nextRace.storyHidden||!nextRace.controlsVisible)
+  throw Error('Story did not transition to a clean next race');
+ await page.locator('#pause').click();
+ await page.locator('#modal-tertiary').click();
  await page.locator('[data-tab="races"]').click();
  if(await page.locator('[data-race="1"]').isDisabled())throw Error('Completing chapter 1 failed to unlock chapter 2');
  await page.locator('[data-tab="upgrades"]').click();
