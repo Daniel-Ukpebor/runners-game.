@@ -3,7 +3,7 @@
 export function createCinematic({THREE,scene,camera,actor,rival,runner,route,ensureCourse,levelIndex}){
  const overlay=document.getElementById('story-overlay');
  const target=new THREE.Vector3(),look=new THREE.Vector3(),aim=new THREE.Vector3();
- const youthKai=runner.clone(true),youthRiven=rival.clone(true);
+ let youthKai=runner.clone(true),youthRiven=rival.clone(true);
  youthKai.name='Kai, summer in Vesper';youthRiven.name='Riven, summer in Vesper';
  youthKai.scale.setScalar(.73);youthRiven.scale.setScalar(.73);
  scene.add(youthKai,youthRiven);youthKai.visible=youthRiven.visible=false;
@@ -19,7 +19,14 @@ export function createCinematic({THREE,scene,camera,actor,rival,runner,route,ens
    }
    return false;
   }
-  if(!active){active=true;ensureCourse();shot=-1;}
+  if(!active){
+   active=true;ensureCourse();shot=-1;
+   // Rebuild the cinematic doubles from the currently customized runner.
+   scene.remove(youthKai,youthRiven);
+   youthKai=runner.clone(true);youthRiven=rival.clone(true);
+   youthKai.scale.setScalar(.73);youthRiven.scale.setScalar(.73);
+   scene.add(youthKai,youthRiven);
+  }
   const sceneNum=Number(overlay.dataset.scene||0);
   if(shot!==sceneNum){shot=sceneNum;shotStarted=now;}
   const t=(now-shotStarted)/1000;
