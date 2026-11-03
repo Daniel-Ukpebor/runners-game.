@@ -42,7 +42,7 @@ const palettes={
   jacket:['#ad493b','#486b67','#cf945c','#454c62','#c5b6a5'],
   hair:['#222428','#443128','#744329','#be9063','#8b3142']
 };
-let style={skin:2,jacket:0,hair:0,haircolor:0,build:0,gear:0,accessory:0};
+let style={skin:2,jacket:0,hair:0,haircolor:0,build:0,gear:0,accessory:0,face:1,physique:1,eyecolor:0};
 try {
   const stored=JSON.parse(localStorage.getItem('runners.style')||'null');
   if(stored) style={...style,...stored};
@@ -449,9 +449,10 @@ function makeCharacter(){
   const eyeL=ball(body,-.115,1.6,.294,.041,.024,.018,0xe9d9ca);
   const eyeR=ball(body,.115,1.6,.294,.041,.024,.018,0xe9d9ca);
   runner.userData.eyes=[eyeL,eyeR];
+  runner.userData.pupils=[];
   for(const side of [-1,1]){
     // Eyelids, brows and individually visible pupils read well in the large loadout preview.
-    ball(body,side*.115,1.607,.315,.017,.019,.012,0x322922);
+    const pupil=ball(body,side*.115,1.607,.315,.017,.019,.012,0x322922);runner.userData.pupils.push(pupil);
     ball(body,side*.115,1.607,.327,.009,.012,.007,0x121718);
     const brow=ball(body,side*.113,1.692,.3,.067,.016,.014,0x272324);
     brow.rotation.z=-side*.08;
@@ -648,10 +649,16 @@ function applyStyle(){
   runner.userData.torso.material=jacketMat;
   runner.userData.hood.material=jacketMat;
   const build=Number(style.build)===1?1:0;
-  runner.userData.torso.scale.set(build===0?1.1:build===1?.88:1,1,build===0?1.05:1);
-  runner.userData.face.scale.set(build===0?.272:build===1?.235:.255,.32,build===0?.255:.24);
-  runner.userData.arms.forEach((a,i)=>a.shoulder.position.x=(i===0?-1:1)*(build===0?.41:build===1?.33:.37));
-  runner.userData.legs.forEach((leg,i)=>leg.hip.position.x=(i===0?-1:1)*(build===1?.19:.17));
+  const physique=clamp(Number(style.physique)||0,0,2),wide=[.88,1,1.16][physique];
+  const faceShape=clamp(Number(style.face)||0,0,2);
+  runner.userData.torso.scale.set((build===0?1.10:.89)*wide,1,(build===0?1.05:.98)*(.96+physique*.045));
+  const faces=[[1.08,.98,1.02],[1,1,1],[.90,1.08,.94]];
+  const f=faces[faceShape];
+  runner.userData.face.scale.set((build===0?.272:.235)*f[0],.32*f[1],(build===0?.255:.24)*f[2]);
+  runner.userData.arms.forEach((a,i)=>a.shoulder.position.x=(i===0?-1:1)*(build===0?.41:.33)*wide);
+  runner.userData.legs.forEach((leg,i)=>leg.hip.position.x=(i===0?-1:1)*(build===1?.19:.17)*(.93+physique*.065));
+  const eyeColors=[0x322922,0x80633f,0x678695];
+  runner.userData.pupils?.forEach(p=>p.material=mat(eyeColors[clamp(Number(style.eyecolor)||0,0,2)]));
   if(runner.userData.bag)runner.userData.bag.visible=style.gear!==1;
   runner.userData.accessories?.forEach((o,i)=>{if(o)o.visible=i===Number(style.accessory||0)});
   paintHair();
@@ -660,7 +667,7 @@ function applyStyle(){
 }
 
 function bindStyles(){
-  for(const kind of ['skin','jacket','hair','haircolor','build','gear','accessory']){
+  for(const kind of ['skin','jacket','hair','haircolor','build','gear','accessory','face','physique','eyecolor']){
     document.querySelectorAll('[data-'+kind+']').forEach(btn=>{
       btn.addEventListener('click',()=>{
         style[kind]=Number(btn.dataset[kind]);updateSwatches();applyStyle();
@@ -670,7 +677,7 @@ function bindStyles(){
   updateSwatches();
 }
 function updateSwatches(){
-  for(const kind of ['skin','jacket','hair','haircolor','build','gear','accessory'])document.querySelectorAll('[data-'+kind+']').forEach(el=>el.classList.toggle('selected',Number(el.dataset[kind])===style[kind]));
+  for(const kind of ['skin','jacket','hair','haircolor','build','gear','accessory','face','physique','eyecolor'])document.querySelectorAll('[data-'+kind+']').forEach(el=>el.classList.toggle('selected',Number(el.dataset[kind])===style[kind]));
 }
 function notify(message,time=2){ui.toast.textContent=message;ui.toast.classList.add('visible');feedbackUntil=runClock+time}
 function sound(freq=300,span=.08,kind='sine',gain=.045){
