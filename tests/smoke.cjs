@@ -49,7 +49,7 @@ const fs = require('fs');
  await page.locator('[data-tier="2"]').click();
  if(!(await page.locator('[data-tier="2"]').getAttribute('class'))?.includes('selected'))throw Error('Elite rival tier did not select');
  await page.locator('[data-tier="1"]').click();
- await page.locator('#studio-back').click();
+ await page.locator('[data-tab="story"]').click();
  await page.locator('#start').click({timeout:7000});
  await page.locator('#story-overlay:not([hidden])').waitFor();
  await page.waitForTimeout(650);
