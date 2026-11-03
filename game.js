@@ -506,6 +506,17 @@ function makeRival(){
   const rivalTorso=tube(trunk,0,.68,0,.29,.9,.27,0x4f5d62);
   tube(trunk,0,.16,0,.29,.22,.25,0x2d353d);
   const rivalFace=ball(trunk,0,1.47,.035,.26,.32,.26,0xa27359);
+  // A face for every rival, not anonymous featureless spheres.
+  const rivalBrows=[];
+  for(const side of [-1,1]){
+    ball(trunk,side*.117,1.54,.285,.05,.032,.017,0xeadbcb);
+    ball(trunk,side*.117,1.542,.300,.023,.026,.013,0x29282a);
+    const brow=ball(trunk,side*.119,1.633,.285,.072,.018,.017,0x252529);
+    brow.rotation.z=-side*.13;rivalBrows.push(brow);
+    ball(trunk,side*.255,1.43,.06,.037,.067,.035,0xa57659);
+  }
+  ball(trunk,0,1.46,.315,.055,.055,.065,0xb3805f);
+  ball(trunk,0,1.351,.285,.086,.018,.015,0x623c36);
   const rivalHair=ball(trunk,0,1.78,-.01,.27,.16,.27,0x202629);
   for(const side of [-1,1]){
     const a=new THREE.Group();a.position.set(side*.34,1.03,0);trunk.add(a);
