@@ -19,7 +19,7 @@ const THREE_COLOR = 0x232323;
 let renderer, camera, scene, world, actor, runner, rival, rivalArms=[], rivalLegs=[], cinematic=null, skyDomeMaterial, keySun, skyHem, runClock=0, started=false, paused=false;
 let startAt=0, elapsed=0, finished=false, collected=0, falls=0, feedbackUntil=0, flashUntil=0;
 let checkpointIndex=0, best=0, volume=true, audioContext=null, builtLevel=0;
-const route=[], obstacles=[], pickups=[], animated=[], groundShadows=[];
+const route=[], obstacles=[], pickups=[], animated=[], groundShadows=[], speedPads=[], birds=[];
 const radius=0.38, temp=new THREE.Vector3(), targetCamera=new THREE.Vector3(), cameraAim=new THREE.Vector3();
 const state={x:0,y:1,z:-5.5,vx:0,vz:0,vy:0,grounded:true,coyote:0,buffer:0,slide:0,boost:0,runPhase:0,stepTimer:0,angle:0,airTime:0,stuntScore:0,combo:0,comboWindow:0,pendingStunt:0,trick:0,trickUsed:false,vault:0};
 const input={x:0,z:0,pointer:null,keys:new Set()};
@@ -213,10 +213,70 @@ function decorations(){
   const sign=new THREE.Mesh(new THREE.PlaneGeometry(5.5,1.6),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}));
   sign.position.set(-10,4,73);sign.rotation.y=Math.PI/2;world.add(sign);
 }
+function makeInteractables(){
+  for(let i=0;i<route.length;i++){
+    const p=route[i];
+    if(i%2===0){
+      const x=p.x+(i%4===0?-1.75:1.75),z=p.z-1.8;
+      const group=new THREE.Group();world.add(group);
+      group.position.set(x,.055,z);
+      const plate=block(group,0,0,0,2.05,.1,2.2,0x356e69);
+      const glow=mat(0x7ce7d7,.8);
+      for(let k=0;k<3;k++){
+        const chevron=block(group,0,.065,-.65+k*.53,1.45,.025,.13,glow);
+        chevron.rotation.y=k%2?.22:-.22;
+      }
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(1.05,.045,5,16),glow);
+      ring.position.y=.068;ring.rotation.x=-Math.PI/2;ring.scale.y=.85;group.add(ring);
+      speedPads.push({x,z,group,used:false,ring});
+    }
+    if(i%2===1){
+      for(let k=0;k<3;k++){
+        const side=(k%2===0?1:-1),b=new THREE.Group();
+        b.position.set(p.x+side*(p.w/2-1.0),1.05,p.z-5+k*3);world.add(b);
+        ball(b,0,0,0,.19,.16,.31,0x626964);
+        ball(b,0,.16,.20,.12,.10,.12,0x7f8880);
+        const wingL=ball(b,-.23,.055,-.04,.32,.055,.14,0x747d76);
+        const wingR=ball(b,.23,.055,-.04,.32,.055,.14,0x747d76);
+        const beak=ball(b,0,.14,.32,.045,.03,.07,0xdbb782);
+        birds.push({group:b,wingL,wingR,scared:false,air:0,home:b.position.clone(),side});
+      }
+    }
+  }
+}
+function tickInteractables(dt){
+  if(!started||paused||finished)return;
+  for(const b of birds){
+    if(!b.scared&&Math.hypot(state.x-b.group.position.x,state.z-b.group.position.z)<3.1){
+      b.scared=true;b.air=0;
+      if(Math.random()<.5)systems.sfx('slide');
+    }
+    if(b.scared){
+      b.air+=dt;
+      b.group.position.y=b.home.y+Math.min(5.3,b.air*3.3);
+      b.group.position.x+=b.side*dt*1.8;
+      b.group.position.z+=dt*1.7;
+      b.wingL.rotation.z=Math.sin(b.air*25)*.9;
+      b.wingR.rotation.z=-Math.sin(b.air*25)*.9;
+      b.group.visible=b.air<3.6;
+    }
+  }
+  for(const p of speedPads){
+    p.ring.rotation.z+=dt*.4;
+    if(!p.used&&state.grounded&&Math.abs(state.x-p.x)<1.3&&Math.abs(state.z-p.z)<1.35){
+      p.used=true;state.boost=1.65;
+      state.vz=Math.max(state.vz,11.4);
+      bankStunt(45,'BOOST STRIP');
+      systems.sfx('coin');
+    }
+    p.group.scale.y=1+Math.sin(runClock*3+p.z)*.025;
+  }
+}
+
 function buildDistrict(){
   const positions=systems.coursePositions();
   positions.forEach((p,i)=>roof(i,...p));
-  surrounding();decorations();
+  surrounding();decorations();makeInteractables();
   // Obstacles now demand actual parkour: full-width beams require SLIDE,
   // full-width low barriers require JUMP; crates offer slower detour lanes.
   systems.courseHazards().forEach(spec=>{
@@ -274,6 +334,8 @@ function optimizeDistrict(){
   world.updateMatrixWorld(true);
   const dynamic=new Set();
   for(const p of pickups)p.group.traverse(o=>dynamic.add(o));
+  for(const p of speedPads)p.group.traverse(o=>dynamic.add(o));
+  for(const b of birds)b.group.traverse(o=>dynamic.add(o));
   const groups=new Map(), removals=[];
   world.traverse(o=>{
     if(!o.isMesh||dynamic.has(o))return;
@@ -568,7 +630,7 @@ function resetPosition(point=0){
   state.grounded=true;state.coyote=0;state.buffer=0;state.slide=0;state.boost=0;state.vault=0;state.trick=0;state.trickUsed=false;state.pendingStunt=0;
 }
 function rebuildCourse(){
-  world.clear();route.length=0;obstacles.length=0;pickups.length=0;animated.length=0;
+  world.clear();route.length=0;obstacles.length=0;pickups.length=0;animated.length=0;speedPads.length=0;birds.length=0;
   seed=93519+systems.levelIndex()*612;
   buildDistrict();optimizeDistrict();builtLevel=systems.levelIndex();tuneDistrict();dressRival();
 }
@@ -584,7 +646,9 @@ function newRun(){
   if(builtLevel!==systems.levelIndex())rebuildCourse();
   elapsed=0;collected=0;falls=0;finished=false;paused=false;checkpointIndex=0;
   state.stuntScore=0;state.combo=0;state.comboWindow=0;state.pendingStunt=0;state.trick=0;state.trickUsed=false;state.vault=0;updateStuntHud();
-  obstacles.forEach(o=>{o.hit=0;o.vaulted=false;o.cleared=false;});pickups.forEach(p=>{p.taken=false;p.group.visible=true});
+  obstacles.forEach(o=>{o.hit=0;o.vaulted=false;o.cleared=false;});
+  speedPads.forEach(p=>p.used=false);
+  birds.forEach(b=>{b.scared=false;b.air=0;b.group.visible=true;b.group.position.copy(b.home);});pickups.forEach(p=>{p.taken=false;p.group.visible=true});
   resetPosition(0);started=true;ui.splash.hidden=true;ui.modal.hidden=true;if(rival)rival.visible=true;
   ui.hud.hidden=false;ui.controls.hidden=false;ui.pause.hidden=false;$('sound-hud').hidden=false;
   ui.pause.setAttribute('aria-label','Pause game');
@@ -767,7 +831,7 @@ function simulation(dt){
   const speed=state.slide>0?Math.max(9.3,topSpeed+1.1):topSpeed;
   const airGrip=7.5+systems.getUpgrade('grip')*1.7;
   state.vx=smooth(state.vx,dx*speed,state.grounded?13:airGrip,dt);
-  state.vz=smooth(state.vz,dz*speed+(state.boost>0?1.2:0),state.grounded?13:airGrip,dt);
+  state.vz=smooth(state.vz,dz*speed+(state.boost>0?3.4:0),state.grounded?13:airGrip,dt);
   // The camera looks toward +Z, so screen-right corresponds to world -X.
   state.x+=state.vx*dt;state.z+=state.vz*dt;
   const roof=route.find(p=>Math.abs(state.x-p.x)<p.w/2-.25&&Math.abs(state.z-p.z)<p.l/2-.15);
@@ -784,7 +848,7 @@ function simulation(dt){
   } else {state.y=1;state.vy=0;}
   if(state.buffer>0&&(state.grounded||state.coyote>0))performJump();
   if(state.y<-12)kill();
-  collide(dt);checkpoint();
+  collide(dt);checkpoint();tickInteractables(dt);
   for(const p of pickups){
     if(!p.taken&&Math.abs(state.x-p.x)<1.25&&Math.abs(state.z-p.z)<1.5&&Math.abs(state.y-1)<1.8){
       p.taken=true;p.group.visible=false;collected++;notify('SIGNAL FOUND  '+collected+'/5',1.5);sound(910,.19,'sine',.045);systems.sfx('coin');
