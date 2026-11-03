@@ -109,3 +109,29 @@
  .story-actions .primary,.story-actions .secondary{min-height:0;padding:11px 14px;font-size:10px}
  #story-step{margin-top:8px}
 }
+
+/* V3.1 / mobile polish: always-visible start, detailed character fitting room */
+#start{display:block;margin:10px 0 12px;max-width:350px;touch-action:manipulation}
+#avatar-preview{width:100%;height:150px;position:relative;margin:8px 0;background:radial-gradient(ellipse at center,#52646a85,#17232832 67%,transparent);border-bottom:1px solid #f2dfc448;overflow:hidden}
+#avatar-preview canvas{display:block;width:100%;height:100%;object-fit:contain}
+#customize-panel:not(.customize-focused) #avatar-preview{display:none}
+#customize-panel.customize-focused{overflow-y:auto;overscroll-behavior:contain}
+#customize-panel .hair-swatch{width:27px;height:27px;border-radius:50%}
+#customize-panel .hair-swatch.selected{outline:2px solid #f1d9b8}
+.menu-audio{margin-bottom:6px;float:right;font-size:9px!important;padding:7px 10px!important}
+#menu-content .race-row b{white-space:nowrap}
+@media (orientation:landscape) and (max-height:520px){
+  #start{margin:6px 0 7px;min-height:41px;padding:11px 16px;font-size:11px}
+  #customize-panel.customize-focused{max-height:calc(100vh - 40px);padding-bottom:20px}
+  #avatar-preview{height:135px}
+  #customize-panel:not(.customize-focused) .custom-subnote{display:none}
+  #customize-panel .custom-title{margin-bottom:5px}
+  #customize-panel .build-options .hair-choice{font-size:8px;padding:5px}
+  .menu-audio{margin-top:0;line-height:1}
+  #splash .menu .story{max-width:460px}
+}
+@media (orientation:portrait){
+  #start{margin:13px 0 13px}
+  #avatar-preview{height:205px}
+  #customize-panel.customize-focused{max-height:none}
+}
