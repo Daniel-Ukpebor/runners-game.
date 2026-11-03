@@ -139,6 +139,8 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   const actions=document.createElement('div');actions.id='studio-actions';
   actions.innerHTML='<button id="studio-back" class="secondary">← BACK TO MENU</button><button id="studio-race" class="primary">RACE WITH THIS LOOK ↗</button>';
   controls.appendChild(actions);
+  // Keep Back always in sight—even when the loadout controls scroll.
+  stageHead.appendChild(actions.querySelector('#studio-back'));
   aside.append(stage,controls);
   $('studio-back').addEventListener('click',()=>setTab('story'));
   $('studio-race').addEventListener('click',()=>startStory());
