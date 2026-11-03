@@ -86,7 +86,7 @@ function boot() {
   keySun=new THREE.DirectionalLight(0xffbd84,2.55);keySun.position.set(-34,45,70);scene.add(keySun);
   const ambient=new THREE.DirectionalLight(0xd5dfea,.55);ambient.position.set(20,20,-20);scene.add(ambient);
   ball(scene,-65,33,148,9,9,1,mat(0xffd3a0,.65));
-  buildDistrict();optimizeDistrict();makeCharacter();makeRival();makeContactShadow();tuneDistrict();applyStyle();systems.init();createStuntHud();cinematic=createCinematic({THREE,scene,camera,actor,rival,runner,route,ensureCourse:()=>{if(builtLevel!==systems.levelIndex())rebuildCourse()}});bindControls();resize();
+  buildDistrict();optimizeDistrict();makeCharacter();makeRival();makeContactShadow();tuneDistrict();applyStyle();systems.init();createStuntHud();cinematic=createCinematic({THREE,scene,camera,actor,rival,runner,route,ensureCourse:()=>{if(builtLevel!==systems.levelIndex())rebuildCourse()},levelIndex:()=>systems.levelIndex()});bindControls();resize();
   ui.best.textContent=systems.getBest()===null?'—':Number(systems.getBest()).toFixed(1)+'s';
   camera.position.set(0,5,-15);
   cameraAim.set(0,1,6);
