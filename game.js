@@ -1,5 +1,5 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js';
-import {createSystems,LEVELS} from './systems.js?v=4';
+import {createSystems,LEVELS} from './systems.js?v=5';
 import {createCinematic} from './cinematic.js?v=4';
 
 const $ = id => document.getElementById(id);
@@ -39,10 +39,11 @@ const palettes={
   jacket:['#ad493b','#486b67','#cf945c','#454c62','#c5b6a5'],
   hair:['#222428','#443128','#744329','#be9063','#8b3142']
 };
-let style={skin:2,jacket:0,hair:0,haircolor:0,build:2,gear:0};
+let style={skin:2,jacket:0,hair:0,haircolor:0,build:0,gear:0,accessory:0};
 try {
   const stored=JSON.parse(localStorage.getItem('runners.style')||'null');
   if(stored) style={...style,...stored};
+  if(style.build!==0&&style.build!==1)style.build=0;
   best=Number(localStorage.getItem('runners.best')||0);
 } catch(e) {}
 const systems=createSystems({THREE,getScene:()=>scene,getRunner:()=>runner,onLaunch:()=>newRun(),onMenu:()=>goMain(),onStyle:()=>applyStyle()});
@@ -417,7 +418,7 @@ function updateRival(dt){
   if(!rival)return;
   rival.visible=started||finished;
   if(!rival.visible)return;
-  const z=Math.min(route.at(-1).z+6,-5.5+elapsed*systems.getLevel().speed);
+  const z=Math.min(route.at(-1).z+6,-5.5+elapsed*systems.getRivalSpeed());
   let near=route[0],next=route[1];
   for(let i=0;i<route.length;i++){
     if(z>=route[i].z-10)near=route[i];
@@ -494,7 +495,7 @@ function applyStyle(){
   runner.userData.arms.forEach(a=>{a.upper.material=jacketMat;a.elbow.children.at(-1).material=skinMat;});
   runner.userData.torso.material=jacketMat;
   runner.userData.hood.material=jacketMat;
-  const build=Number(style.build||0);
+  const build=Number(style.build)===1?1:0;
   runner.userData.torso.scale.set(build===0?1.1:build===1?.88:1,1,build===0?1.05:1);
   runner.userData.face.scale.set(build===0?.272:build===1?.235:.255,.32,build===0?.255:.24);
   runner.userData.arms.forEach((a,i)=>a.shoulder.position.x=(i===0?-1:1)*(build===0?.41:build===1?.33:.37));
@@ -506,7 +507,7 @@ function applyStyle(){
 }
 
 function bindStyles(){
-  for(const kind of ['skin','jacket','hair','haircolor','build','gear']){
+  for(const kind of ['skin','jacket','hair','haircolor','build','gear','accessory']){
     document.querySelectorAll('[data-'+kind+']').forEach(btn=>{
       btn.addEventListener('click',()=>{
         style[kind]=Number(btn.dataset[kind]);updateSwatches();applyStyle();
@@ -516,7 +517,7 @@ function bindStyles(){
   updateSwatches();
 }
 function updateSwatches(){
-  for(const kind of ['skin','jacket','hair','haircolor','build','gear'])document.querySelectorAll('[data-'+kind+']').forEach(el=>el.classList.toggle('selected',Number(el.dataset[kind])===style[kind]));
+  for(const kind of ['skin','jacket','hair','haircolor','build','gear','accessory'])document.querySelectorAll('[data-'+kind+']').forEach(el=>el.classList.toggle('selected',Number(el.dataset[kind])===style[kind]));
 }
 function notify(message,time=2){ui.toast.textContent=message;ui.toast.classList.add('visible');feedbackUntil=runClock+time}
 function sound(freq=300,span=.08,kind='sine',gain=.045){
@@ -638,11 +639,12 @@ function bindControls(){
   stick.addEventListener('pointerup',release);stick.addEventListener('pointercancel',release);
   actionPointer('jump',jump);actionPointer('slide',slide);actionPointer('trick',trick);
   addEventListener('keydown',e=>{
-    if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
+    if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyR'].includes(e.code)&&(started||paused||finished))e.preventDefault();
     input.keys.add(e.code);
     if(!e.repeat&&(e.code==='Space'||e.code==='KeyJ'))jump();
     if(!e.repeat&&(e.code==='KeyC'||e.code==='ShiftLeft'))slide();
     if(!e.repeat&&(e.code==='KeyK'||e.code==='KeyF'))trick();
+    if(!e.repeat&&e.code==='KeyR'&&(started||paused||finished)){e.preventDefault();newRun();}
     if(!e.repeat&&e.code==='Escape'&&started&&!finished)togglePause();
   },{passive:false});
   addEventListener('keyup',e=>input.keys.delete(e.code));
@@ -650,7 +652,7 @@ function bindControls(){
   ui.pause.addEventListener('click',togglePause);
   $('retry').addEventListener('click',newRun);
   $('sound').addEventListener('click',()=>systems.toggleAudio());
-  ui.modalPrimary.addEventListener('click',()=>{if(finished)newRun();else togglePause()});
+  ui.modalPrimary.addEventListener('click',()=>{if(finished)systems.startStory();else togglePause()});
   ui.modalSecondary.addEventListener('click',()=>{ui.modal.hidden=true;if(finished)goMain();else newRun();});
   addEventListener('blur',()=>{if(started&&!paused&&!finished)togglePause()});
   document.addEventListener('visibilitychange',()=>{if(document.hidden&&started&&!paused&&!finished)togglePause()});
@@ -699,21 +701,21 @@ function checkpoint(){
 function finish(){
   finished=true;started=false;ui.controls.hidden=true;ui.pause.hidden=true;
   $('sound-hud').hidden=true;
-  const info=systems.afterFinish({elapsed,collected,falls,stuntScore:state.stuntScore});
-  const benchmark=(route.at(-1).z+11.5)/systems.getLevel().speed;
+  const benchmark=(route.at(-1).z+11.5)/systems.getRivalSpeed();
   const beat=elapsed<benchmark;
+  const info=systems.afterFinish({elapsed,collected,falls,stuntScore:state.stuntScore,beatRival:beat});
   ui.best.textContent=Number(systems.getBest()).toFixed(1)+'s';
-  ui.modal.hidden=false;ui.modalTitle.textContent=beat?'RIVAL BEATEN':'ROOFTOP CLEARED';
+  ui.modal.hidden=false;ui.modalTitle.textContent=beat?systems.getTier().label+' VICTORY':'FINISH LINE';
   ui.modalText.textContent=elapsed.toFixed(1)+'s  ·  '+collected+'/5 SIGNALS  ·  '+falls+' FALLS\n'+state.stuntScore+' STYLE POINTS  ·  +'+info.stuntCredits+' TRICK CREDITS\n\n'+
     (info.personalBest?'NEW PERSONAL BEST · YOUR SHADOW IS SAVED\n':'')+
-    '◈ +'+info.reward+' ROUTE CREDITS\n\n'+
+    info.tier+' LEAGUE · ◈ +'+info.reward+' ROUTE CREDITS\n\n'+
     (beat?systems.getLevel().rival.toUpperCase()+': “You got me this time. Not bad.”':
     systems.getLevel().rival.toUpperCase()+': “That was close. Race me again.”')+
     (info.newlyUnlocked?'\n\nNEXT DISTRICT UNLOCKED':'');
   ui.modalPrimary.textContent='RACE AGAIN';ui.modalSecondary.textContent='MAIN MENU';
   const third=$('modal-tertiary');
-  third.textContent=info.doneAll?'VIEW CHAPTERS':'NEXT CHAPTER';
-  ui.modal.dataset.action=info.doneAll?'menu':'next';
+  third.textContent=info.newlyUnlocked?'NEXT CHAPTER':'VIEW DISTRICTS';
+  ui.modal.dataset.action=info.newlyUnlocked?'next':'menu';
   systems.sfx('finish');sound(660,.28,'triangle',.05);
 }
 
