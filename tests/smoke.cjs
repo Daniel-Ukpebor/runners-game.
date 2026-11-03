@@ -30,7 +30,7 @@ const fs = require('fs');
    timer:document.querySelector('#time').textContent
  }));
  console.log('AFTER START:',JSON.stringify(after));
- if(!after.splashHidden||!after.controlsVisible||parseFloat(after.timer)<=0)throw Error('Start button failed');
+ if(!after.splashHidden||!after.controlsVisible||Number(after.timer.split(':').at(-1))<=0)throw Error('Start button failed');
  await page.keyboard.down('w');
  await page.waitForTimeout(1300);
  await page.keyboard.up('w');
