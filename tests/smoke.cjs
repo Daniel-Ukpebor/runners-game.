@@ -20,6 +20,13 @@ const fs = require('fs');
  }));
  console.log('INIT:',JSON.stringify(init));
  if(!init.hasCanvas||init.errorVisible||!init.introVisible)throw Error('Game failed initial render');
+ await page.waitForFunction(()=>{
+  const a=window.__runnersDiagnostics?.().assets;
+  return a&&(a.loaded+a.failures===a.total);
+ },null,{timeout:18000});
+ const modelCheck=await page.evaluate(()=>window.__runnersDiagnostics().assets);
+ console.log('LOCAL 3D ASSETS:',JSON.stringify(modelCheck));
+ if(!modelCheck.loaded||modelCheck.failures)throw Error('Self-hosted 3D environment model load failed');
  fs.mkdirSync('test-results',{recursive:true});
  await page.screenshot({path:'test-results/runners-title.png'});
  const startRect=await page.locator('#start').boundingBox();
