@@ -1,0 +1,102 @@
+/* RUNNERS / 0.5: character studio and tactile hub.
+   Full-height responsive editor, uncluttered route selector. */
+:root{--studio-ink:#111a1e;--studio-rust:#d58d6a;--studio-text:#f4e7d4}
+#customize-panel:not(.customize-focused){display:none!important}
+#customize-panel.customize-focused{
+ position:fixed!important;inset:0!important;z-index:9!important;
+ display:grid!important;grid-template-columns:minmax(0,48%) minmax(0,52%)!important;
+ width:100%!important;max-width:none!important;max-height:none!important;height:100dvh!important;
+ margin:0!important;padding:0!important;border:0!important;overflow:hidden!important;
+ background:#101d23!important;touch-action:pan-y!important;align-self:auto!important
+}
+#studio-stage{position:relative;min-width:0;min-height:0;height:100dvh;overflow:hidden;background:radial-gradient(circle at 49% 70%,#526c6b,#273c40 65%,#1b2c32);border-right:1px solid #edb88642}
+.studio-head{position:relative;z-index:2;margin:calc(13px + env(safe-area-inset-top)) 0 0 clamp(14px,3vw,40px);pointer-events:none}
+.studio-head h2{margin:7px 0 0;font-size:clamp(42px,6.8vw,79px);font-weight:1000;font-style:italic;letter-spacing:-.08em;line-height:.9}
+.studio-head h2 span{color:#dc926a}
+.studio-head p{color:#e7c9ad;font-size:10px;letter-spacing:.18em;font-weight:900;margin-top:11px}
+#studio-stage #avatar-preview{display:block!important;position:absolute!important;inset:3% 0 0!important;width:100%!important;height:97%!important;margin:0!important;border:0!important;background:transparent!important;pointer-events:none}
+#studio-stage #avatar-preview canvas{display:block!important;width:100%!important;height:100%!important;object-fit:contain}
+#studio-stage:after{content:"";position:absolute;left:21%;right:21%;bottom:7%;border-top:1px solid #f0c39b75;pointer-events:none}
+#studio-controls{height:100dvh;width:100%;min-width:0;overflow-y:auto;overscroll-behavior:contain;padding:calc(19px + env(safe-area-inset-top)) clamp(19px,3vw,44px) calc(34px + env(safe-area-inset-bottom));touch-action:pan-y!important;-webkit-overflow-scrolling:touch}
+#studio-controls>.custom-title{font-size:11px;letter-spacing:.23em;color:#f1ca9d;margin:0 0 10px}
+#studio-controls .custom-label{font-size:9px;letter-spacing:.18em;color:#ddbba6;margin:16px 0 8px}
+#studio-controls .swatches{display:flex!important;flex-wrap:wrap;gap:9px}
+#studio-controls .swatch{width:28px;height:28px;border-radius:5px;cursor:pointer}
+#studio-controls .swatch.selected{outline:2px solid #f0ceac;outline-offset:3px}
+#studio-controls .hair-choice{background:#172c30!important;border:1px solid #6c7979!important;padding:10px 13px!important;color:#ecdccc!important;font-weight:850}
+#studio-controls .hair-choice.selected{background:#dfad80!important;color:#172126!important;border-color:#dfad80!important}
+#studio-controls .key-help{font-size:10px;line-height:1.8;color:#ccbbaa}
+#studio-controls .menu-audio{padding:10px 12px!important;font-size:10px}
+#studio-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:22px;padding:13px 0 2px;border-top:1px solid #dfbd9d44}
+#studio-actions button{min-height:42px!important;padding:11px 15px!important;font-size:10px!important;box-shadow:none!important}
+#studio-actions .primary{background:#dfa574;color:#112024}
+#menu-nav{border:0!important;gap:2px!important;margin:11px 0!important;display:flex!important;align-items:center!important}
+#menu-nav button{border-bottom:2px solid transparent!important;font-size:10px!important;font-weight:900!important;letter-spacing:.11em!important;padding:8px 10px!important;color:#d4c4b7!important;transition:color .16s,border-color .16s}
+#menu-nav button.nav-active{color:#f4c99b!important;border-color:#dfa777!important}
+#splash .menu{max-width:600px!important;min-width:0!important}
+#splash .eyebrow{font-size:9px;letter-spacing:.18em}
+#splash .story{max-width:430px;font-size:12px!important;line-height:1.5!important}
+#splash .hero-label{letter-spacing:.06em}
+#splash .meta{font-size:9px!important}
+#menu-content{max-width:540px}
+#menu-content .menu-wallet{display:inline-block;margin:4px 0 5px;background:transparent;padding:7px 0;border-left:0;color:#f5d5b7}
+#menu-content .race-list{gap:4px;max-height:32vh;overflow-y:auto;scrollbar-width:thin;overscroll-behavior:contain}
+#menu-content .race-row{border-radius:0!important;transition:border-color .14s,background-color .14s!important}
+#menu-content .race-row.chosen{border-left:4px solid #dfa777!important;background:#253135e6!important}
+#menu-content .race-row:disabled{opacity:.4}
+#menu-content .future-routes{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0 6px}
+#menu-content .future-route{display:flex;flex-direction:column;gap:4px;flex:1 1 100px;padding:8px 10px;border:1px solid #ffffff3d;color:#cebba7;font-size:10px;font-weight:900;letter-spacing:.07em;opacity:.66}
+#menu-content .future-route small{font-size:9px;color:#9d988c;letter-spacing:.04em;font-weight:600}
+#menu-content .tier-selector{display:flex;gap:6px;margin:9px 0;flex-wrap:wrap}
+#menu-content .tier-selector button{padding:8px 12px;border:1px solid #ffffff69;background:#1b282bb9;color:#efddcd;letter-spacing:.11em;font-weight:900;font-size:10px}
+#menu-content .tier-selector button.selected{background:#deb084;color:#152023;border-color:#deb084}
+#menu-content .tier-note{font-size:10px;color:#eac7a3}
+#menu-content .tier-note b{color:#ffe0b6}
+#menu-content .menu-hint{line-height:1.4}
+#splash .hub-hint{font-size:9px;letter-spacing:.17em;color:#e9bf96ad;margin-top:0;user-select:none}
+#splash .hub-hint b{font-size:13px;color:#f6d0a5}
+#splash .intro-divider{margin:9px 0}
+#splash #start{min-height:46px!important;margin:8px 0!important;padding:13px 20px!important;box-shadow:4px 4px 0 #ac5c49!important}
+#splash #logo{font-size:clamp(51px,7.4vw,91px)!important;margin:5px 0 7px!important}
+#splash .featureline{margin:10px 0!important}
+#splash .customize:not(.customize-focused){display:none!important}
+#splash .intro-grid{background:linear-gradient(90deg,rgba(10,20,25,.96) 0%,rgba(16,28,31,.84) 41%,rgba(20,32,38,.05) 100%);gap:0}
+@media (orientation:landscape) and (max-height:520px){
+ #splash .intro-grid{padding:calc(10px + env(safe-area-inset-top)) 24px 14px!important}
+ #splash .menu{width:50vw!important}
+ #splash #logo{font-size:clamp(49px,6.5vw,69px)!important}
+ #splash .story{font-size:11px!important;margin:0 0 4px!important;line-height:1.35!important}
+ #splash .hero-label{margin:6px 0 3px!important;font-size:15px!important}
+ #splash #start{padding:10px 18px!important;min-height:38px!important;font-size:11px!important}
+ #splash .meta,.featureline,.intro-divider{display:none!important}
+ #menu-nav{margin:4px 0 6px!important}
+ #menu-nav button{padding:6px 7px!important;font-size:9px!important}
+ #menu-content .race-list{max-height:30vh}
+ #menu-content .future-route{padding:6px}
+ #menu-content .future-route small{display:none}
+ #menu-content .tier-selector{margin:4px 0}
+ #menu-content .tier-selector button{padding:5px 7px;font-size:9px}
+ #studio-controls{padding:calc(10px + env(safe-area-inset-top)) 15px 22px}
+ #studio-controls .custom-label{margin:9px 0 5px}
+ #studio-controls .hair-choice{padding:7px!important;font-size:9px!important}
+ #studio-controls .swatches{gap:6px}
+ #studio-controls .swatch{width:25px;height:25px}
+ #studio-controls .key-help{display:none}
+ #studio-controls .menu-audio{display:none}
+ #studio-actions{position:sticky;bottom:0;background:#101d23;padding:10px 0 5px}
+ #studio-actions button{padding:9px 11px!important;min-height:36px!important}
+}
+@media (orientation:portrait){
+ #splash .menu{width:100%!important}
+ #splash .intro-grid{background:linear-gradient(180deg,#111c22ec,#18272c86)!important}
+ #splash #logo{font-size:67px!important}
+ #menu-content .race-list{max-height:38vh}
+ #customize-panel.customize-focused{grid-template-columns:1fr!important;grid-template-rows:39% 61%!important;overflow:hidden!important}
+ #studio-stage{height:100%!important;border-right:0;border-bottom:1px solid #ffffff33}
+ #studio-stage .studio-head{margin:14px 0 0 19px}
+ #studio-stage .studio-head h2{font-size:40px}
+ #studio-stage #avatar-preview{inset:0!important;height:100%!important}
+ #studio-controls{height:100%!important;padding:12px 20px 30px}
+ #studio-actions{position:sticky;bottom:0;background:#101d23}
+}
+@media (prefers-reduced-motion:reduce){#menu-nav button,#splash #start{transition:none!important}}
