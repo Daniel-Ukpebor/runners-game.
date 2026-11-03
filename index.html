@@ -1,22 +1,197 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#111b23"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="RUNNERS"><title>RUNNERS | Rooftop Trial</title><style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none;background:#111b23;color:white;font:600 14px system-ui;touch-action:none}canvas{display:block}#hud{position:fixed;top:env(safe-area-inset-top,14px);left:18px;right:18px;display:flex;justify-content:space-between;pointer-events:none;text-shadow:0 2px 5px #000}#hud b{font-size:22px;letter-spacing:3px}#status{position:fixed;top:19%;width:100%;text-align:center;font-size:17px;pointer-events:none;text-shadow:0 2px 6px #000}#stick{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 25px);left:28px;width:116px;height:116px;border:2px solid #ffffff50;border-radius:50%;background:#ffffff16;touch-action:none}#nub{position:absolute;width:48px;height:48px;left:32px;top:32px;background:#ffffff8c;border-radius:50%}.action{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 35px);border:1px solid #ffffff66;border-radius:50%;background:#ffffff35;color:white;font-weight:800;touch-action:none}#jump{right:24px;width:88px;height:88px}#slide{right:125px;width:68px;height:68px;bottom:calc(env(safe-area-inset-bottom) + 45px)}#intro{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#101820df;z-index:5}#intro>div{max-width:340px;text-align:center;padding:28px}h1{font-size:42px;letter-spacing:8px;margin:0 0 8px}p{font-weight:400;line-height:1.5}#start{border:0;padding:15px 40px;background:#efaa65;color:#18212b;font-weight:900;letter-spacing:2px;border-radius:3px}#error{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#151c22;padding:30px;text-align:center;z-index:10}</style></head><body><div id="hud"><b>RUNNERS</b><span id="time">00:00</span></div><div id="status">THE STEPS · ROOFTOP TRIAL</div><div id="stick"><div id="nub"></div></div><button id="slide" class="action">SLIDE</button><button id="jump" class="action">JUMP</button><div id="intro"><div><h1>RUNNERS</h1><p>THE STEPS — ROOFTOP TRIAL</p><p>Run across the rooftops. Leap over gaps, avoid obstacles, and reach the gold finish marker. This is a first movement prototype.</p><button id="start">START RUN</button></div></div><div id="error"></div><script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js';
-try{
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x93afbd);scene.fog=new THREE.Fog(0x93afbd,30,110);
-const camera=new THREE.PerspectiveCamera(68,innerWidth/innerHeight,.1,200);
-const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.setSize(innerWidth,innerHeight);document.body.prepend(renderer.domElement);
-scene.add(new THREE.HemisphereLight(0xffe8d1,0x455363,2.2));const sun=new THREE.DirectionalLight(0xffd39a,2.6);sun.position.set(-18,35,-12);scene.add(sun);
-const mat=(c)=>new THREE.MeshLambertMaterial({color:c});const roof=mat(0xb46e51),edge=mat(0x6d4441),wall=mat(0xbca28b),gold=mat(0xffca67),dark=mat(0x303943),shirt=mat(0xe2a365),skin=mat(0x9b654b);
-function cube(x,y,z,w,h,d,m){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);scene.add(o);return o}
-const platforms=[];for(let i=0;i<18;i++){let z=i*10,x=Math.sin(i*.85)*2.5,w=10;platforms.push({x,z,w});cube(x,0,z,w,1.2,8,roof);cube(x,-4,z,w,7,8,wall);for(let j=-1;j<=1;j+=2)cube(x+j*4.8,.85,z,.35,.55,8,edge);if(i%3===1){cube(x+2,.85,z,1.4,1.1,1.5,dark)}if(i%4===2){cube(x-2,.85,z,2.4,.6,.8,edge)}}
-for(let i=0;i<32;i++){let z=i*6,x=(i%2?1:-1)*(12+(i%4)*3);cube(x,-3,z,8,9+(i%5)*2,7,mat([0x9a9a8e,0xd6b18e,0xa9a0a0][i%3]));}
-const finish=cube(platforms[17].x,2.2,platforms[17].z,5,.2,.5,gold);
-const player=new THREE.Group();scene.add(player);const torso=cube(0,0,0,.65,.95,.4,shirt),head=cube(0,.77,0,.48,.48,.46,skin),legL=cube(-.2,-.72,0,.22,.68,.25,dark),legR=cube(.2,-.72,0,.22,.68,.25,dark);[torso,head,legL,legR].forEach(o=>{scene.remove(o);player.add(o)});
-const state={x:0,y:1.5,z:0,vy:0,ground:true,started:false,won:false,slide:0,time:0};let joy={x:0,y:0};const keys={};addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='Space')jump()});addEventListener('keyup',e=>keys[e.code]=false);
-const stick=document.getElementById('stick'),nub=document.getElementById('nub');let pointer=null;function move(e){if(e.pointerId!==pointer)return;const r=stick.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),len=Math.hypot(dx,dy),s=Math.min(len,38)/(len||1);joy.x=dx*s/38;joy.y=dy*s/38;nub.style.transform='translate('+joy.x*38+'px,'+joy.y*38+'px)'}stick.addEventListener('pointerdown',e=>{pointer=e.pointerId;stick.setPointerCapture(pointer);move(e)});stick.addEventListener('pointermove',move);function release(){pointer=null;joy={x:0,y:0};nub.style.transform='translate(0,0)'}stick.addEventListener('pointerup',release);stick.addEventListener('pointercancel',release);
-function jump(){if(state.ground&&state.started&&!state.won){state.vy=8.8;state.ground=false}}document.getElementById('jump').addEventListener('pointerdown',e=>{e.preventDefault();jump()});document.getElementById('slide').addEventListener('pointerdown',e=>{e.preventDefault();state.slide=.7});document.getElementById('start').onclick=()=>{document.getElementById('intro').style.display='none';state.started=true};
-function reset(){state.x=0;state.y=1.5;state.z=0;state.vy=0;state.ground=true;state.time=0;state.won=false;document.getElementById('status').textContent='KEEP MOVING'}
-let last=performance.now();function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.04);last=now;if(state.started&&!state.won){state.time+=dt;let ax=joy.x+(keys.KeyD?1:0)-(keys.KeyA?1:0),az=-joy.y+(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS?1:0);let len=Math.hypot(ax,az);if(len>1){ax/=len;az/=len}let speed=keys.ShiftLeft?12:8;state.x-=ax*speed*dt;state.z+=az*speed*dt;state.vy-=22*dt;state.y+=state.vy*dt;let onRoof=platforms.some(p=>Math.abs(state.x-p.x)<p.w/2-.15&&Math.abs(state.z-p.z)<4);if(onRoof&&state.y<=1.5&&state.vy<=0){state.y=1.5;state.vy=0;state.ground=true}else if(!onRoof){state.ground=false}if(state.y< -9)reset();state.slide=Math.max(0,state.slide-dt);if(state.z>170){state.won=true;document.getElementById('status').textContent='FINISHED! '+state.time.toFixed(1)+'s · RELOAD TO RACE AGAIN'}document.getElementById('time').textContent=Math.floor(state.time/60).toString().padStart(2,'0')+':'+Math.floor(state.time%60).toString().padStart(2,'0')}
-player.position.set(state.x,state.y,state.z);player.scale.y=state.slide>0?.6:1;player.rotation.y=Math.atan2(-joy.x,-joy.y||-1);camera.position.lerp(new THREE.Vector3(state.x,state.y+5,state.z-9),.09);camera.lookAt(state.x,state.y+1,state.z+7);finish.rotation.y+=dt;renderer.render(scene,camera)}requestAnimationFrame(loop);
-addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-}catch(e){const el=document.getElementById('error');el.style.display='flex';el.textContent='RUNNERS could not start. Try Safari with an internet connection. '+e.message}
-</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#1a2225">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="RUNNERS">
+  <meta name="description" content="RUNNERS — The Steps. A stylized 3D parkour rooftop trial set in Vesper.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <title>RUNNERS — The Steps</title>
+  <style>
+    :root{--paper:#efe0c9;--gold:#e7ad75;--red:#cf6953;--ink:#182125;--faint:rgba(239,224,201,.54)}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{width:100%;height:100%;margin:0;overflow:hidden;overscroll-behavior:none;touch-action:none;background:var(--ink);color:var(--paper);font-family:Arial,Helvetica,sans-serif}
+    button{font-family:inherit;cursor:pointer;-webkit-appearance:none;appearance:none}
+    button:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+    [hidden]{display:none!important}
+    #scene{position:fixed;inset:0;overflow:hidden;z-index:0}
+    #scene canvas{display:block;width:100%;height:100%;transition:filter .1s ease}
+    #scene canvas.impact{filter:sepia(.55) contrast(1.12)}
+    #vignette{position:fixed;inset:0;pointer-events:none;z-index:1;background:linear-gradient(0deg,rgba(22,23,24,.4),transparent 31%,transparent 67%,rgba(22,23,24,.15));}
+    #hud{position:fixed;z-index:3;left:max(24px,env(safe-area-inset-left));right:max(24px,env(safe-area-inset-right));top:calc(13px + env(safe-area-inset-top));pointer-events:none}
+    .hud-top{display:flex;justify-content:space-between;align-items:flex-start;gap:15px}
+    #mark{font-weight:1000;font-style:italic;letter-spacing:.16em;font-size:clamp(17px,2.4vw,24px);color:#fbe9d2;text-shadow:0 2px 5px #15151590}
+    #chapter-label{font-size:10px;letter-spacing:.2em;margin-top:4px;color:#fbe9d2;text-shadow:0 2px 4px #15151590}
+    .stats{display:flex;gap:24px;align-items:flex-start;margin-right:54px}
+    .stat-label{color:#f5dfc3;opacity:.75;letter-spacing:.18em;font-size:10px;text-align:right}
+    .stat-value{font-size:25px;font-weight:900;letter-spacing:.03em;text-shadow:0 2px 5px #0009;text-align:right;font-variant-numeric:tabular-nums}
+    .stat-value.small{font-size:16px;margin-top:6px}
+    #pause{position:fixed;right:max(22px,env(safe-area-inset-right));top:calc(17px + env(safe-area-inset-top));z-index:4;border:1px solid #fff9;background:#172126a8;color:#fff;width:40px;height:40px;font-size:17px}
+    .progress-track{height:3px;background:#fff5;margin-top:12px}
+    #progress-fill{height:100%;background:#eac08b;width:0%;transition:width .15s linear}
+    .bottom-meta{display:flex;justify-content:space-between;align-items:center;margin-top:7px;font-size:10px;font-weight:800;letter-spacing:.17em;text-shadow:0 2px 3px #000}
+    #meter-track{width:74px;height:3px;background:#fff5;display:inline-block;vertical-align:middle;margin-left:6px}
+    #meter-fill{height:100%;width:0;background:var(--gold)}
+    #toast{position:fixed;z-index:3;left:50%;top:20%;transform:translate(-50%,-10px);opacity:0;transition:opacity .24s,transform .24s;pointer-events:none;background:#1b2425d9;border-left:3px solid var(--gold);padding:10px 18px;font-size:11px;letter-spacing:.14em;font-weight:800;text-align:center;white-space:nowrap;max-width:86vw}
+    #toast.visible{opacity:1;transform:translate(-50%,0)}
+    #controls{position:fixed;z-index:4;inset:0;pointer-events:none}
+    #stick{touch-action:none;pointer-events:auto;position:absolute;left:max(29px,env(safe-area-inset-left));bottom:calc(29px + env(safe-area-inset-bottom));width:125px;height:125px;border-radius:50%;border:1.5px solid rgba(255,236,214,.6);background:rgba(17,24,28,.19);backdrop-filter:blur(2px)}
+    #stick:after{content:'';position:absolute;left:50%;top:50%;width:7px;height:7px;border-radius:50%;background:#ffebd580;transform:translate(-50%,-50%)}
+    #thumb{position:absolute;left:calc(50% - 25px);top:calc(50% - 25px);height:50px;width:50px;border-radius:50%;background:rgba(248,219,180,.76);border:2px solid #fff9;box-shadow:0 3px 15px #12161966;pointer-events:none;transition:background .1s}
+    .action{touch-action:none;pointer-events:auto;position:absolute;bottom:calc(38px + env(safe-area-inset-bottom));border:1.7px solid #fde1be9c;background:#1a2429a8;color:#fff1db;border-radius:50%;display:grid;place-content:center;text-align:center;font-size:13px;letter-spacing:.09em;font-weight:900;box-shadow:0 5px 20px #0b131337}
+    #jump{right:max(29px,env(safe-area-inset-right));width:105px;height:105px;background:#9c493ba8;border-color:#ffd4a2}
+    #slide{right:calc(max(29px,env(safe-area-inset-right)) + 121px);bottom:calc(55px + env(safe-area-inset-bottom));width:76px;height:76px}
+    .action.pressed{background:#e6a66f;color:#172126}
+    #control-tip{position:absolute;right:calc(max(29px,env(safe-area-inset-right)) + 37px);bottom:calc(9px + env(safe-area-inset-bottom));font-size:9px;letter-spacing:.14em;color:#f8e6c8c4;text-shadow:0 2px 4px black}
+    .overlay{position:fixed;inset:0;z-index:5;background:linear-gradient(90deg,#152024f5 0%,#172126e6 34%,#17212688 65%,#17212624 100%);overflow-y:auto;touch-action:pan-y}
+    .intro-grid{min-height:100%;display:flex;align-items:center;padding:calc(28px + env(safe-area-inset-top)) max(5vw,32px) calc(25px + env(safe-area-inset-bottom));gap:6vw}
+    .menu{width:min(530px,92vw);flex-shrink:0}
+    .eyebrow{color:var(--gold);font-size:11px;font-weight:900;letter-spacing:.29em}
+    #logo{font-size:clamp(54px,9vw,112px);font-weight:1000;letter-spacing:-.085em;font-style:italic;line-height:.92;color:#fff0d8;transform:skew(-5deg);margin:14px 0 12px;text-shadow:4px 6px 0 #8b433a}
+    #logo .slash{display:inline-block;width:38px;height:8px;background:var(--red);transform:rotate(-11deg) translate(-12px,-12px)}
+    .hero-label{font-weight:900;letter-spacing:.12em;font-size:19px;margin:28px 0 8px}
+    .story{font-size:clamp(14px,1.5vw,16px);line-height:1.6;color:#f2e2d3cc;max-width:430px;margin:0 0 22px}
+    .story strong{color:#ffe5c3}
+    .intro-divider{border:0;border-top:1px solid #fff4;margin:18px 0 16px}
+    .featureline{display:flex;gap:20px;font-size:10px;letter-spacing:.13em;font-weight:800;color:#f8dbc1c2;margin-bottom:22px}
+    .primary{border:none;background:var(--gold);color:#182123;font-weight:1000;letter-spacing:.16em;font-size:13px;padding:17px 23px;min-height:50px;text-align:left;border-radius:0;box-shadow:5px 5px 0 #bd6549}
+    .primary:hover{background:#ffd0a0}
+    .meta{font-size:10px;color:#f3d6c0af;line-height:1.5;margin-top:17px;max-width:380px}
+    .customize{border-left:1px solid #ffffff57;padding-left:24px;min-width:235px;max-width:280px;align-self:center}
+    .custom-title{font-size:10px;color:#e1b889;font-weight:900;letter-spacing:.24em;margin-bottom:18px}
+    .custom-label{font-size:10px;letter-spacing:.16em;color:#ecdbc7b8;margin:17px 0 9px;font-weight:800}
+    .swatches{display:flex;flex-wrap:wrap;gap:8px;touch-action:manipulation}
+    .swatch{width:28px;height:28px;border:2px solid transparent;border-radius:0;touch-action:manipulation}
+    .swatch.selected{outline:1px solid #f3e1c8;outline-offset:3px}
+    .hair-choice{border:1px solid #ffffff5c;color:#efe2cf;background:#1420269a;font-weight:800;padding:9px 10px;font-size:10px;letter-spacing:.07em}
+    .hair-choice.selected{background:#e8ad78;color:#172126;border-color:#e8ad78}
+    .key-help{border-top:1px solid #ffffff52;margin-top:23px;padding-top:14px;color:#f2ddc0aa;font-size:11px;line-height:1.7;letter-spacing:.04em}
+    .rotate-note{display:none;color:#ffd6a8;font-size:11px;letter-spacing:.09em;margin-top:8px}
+    .modal-wrap{position:fixed;inset:0;z-index:6;background:#0d151bc7;display:flex;align-items:center;justify-content:center;padding:24px;touch-action:pan-y}
+    .modal-inner{width:min(475px,100%);padding:34px;background:#1c282b;border-top:5px solid #e4a66f;box-shadow:15px 14px 0 #11161977}
+    .modal-inner h2{font-size:clamp(30px,6vw,51px);letter-spacing:-.04em;font-weight:1000;font-style:italic;margin:8px 0 16px}
+    .modal-inner p{white-space:pre-line;font-size:14px;color:#e9d5c1;line-height:1.7;margin-bottom:25px}
+    .modal-buttons{display:flex;gap:12px;flex-wrap:wrap}
+    .secondary{border:1px solid #e9d8bd9c;color:#f4e0c5;background:transparent;letter-spacing:.12em;font-weight:900;font-size:11px;padding:16px 18px}
+    #error{position:fixed;inset:0;background:#142024;z-index:10;display:grid;place-content:center;padding:30px;text-align:center;touch-action:auto}
+    #error h2{font-size:25px;color:#f5d8b6}
+    #error p{font-size:14px;line-height:1.6}
+    @media (orientation:portrait){
+      .rotate-note{display:block}
+      .intro-grid{align-items:flex-start;flex-direction:column;padding:calc(38px + env(safe-area-inset-top)) 27px 35px;gap:20px}
+      .menu{width:100%}
+      .customize{border:0;border-top:1px solid #fff4;padding:17px 0 0;width:100%;max-width:none}
+      #logo{font-size:clamp(58px,14vw,85px)}
+      .featureline{flex-wrap:wrap;gap:9px 20px}
+      #stick{width:114px;height:114px;left:22px;bottom:calc(28px + env(safe-area-inset-bottom))}
+      #jump{right:23px;width:91px;height:91px;bottom:calc(34px + env(safe-area-inset-bottom))}
+      #slide{width:67px;height:67px;right:126px;bottom:calc(49px + env(safe-area-inset-bottom))}
+      #control-tip{display:none}
+      .stats{gap:12px;margin-right:40px}
+      .stat-value{font-size:19px}
+      .stat-label{font-size:8px}
+      .stat-value.small{font-size:13px}
+      #mark{font-size:17px}
+      #chapter-label{font-size:8px;max-width:135px;line-height:1.5}
+      .bottom-meta{font-size:8px}
+    }
+    @media (orientation:landscape) and (max-height:530px){
+      .intro-grid{align-items:flex-start;padding-top:calc(16px + env(safe-area-inset-top));padding-bottom:20px}
+      #logo{font-size:clamp(51px,8vw,78px);margin:5px 0}
+      .hero-label{font-size:15px;margin:10px 0 4px}
+      .story{font-size:12px;line-height:1.4;margin-bottom:10px}
+      .featureline{margin-bottom:12px}
+      .intro-divider{margin:10px 0}
+      .custom-title{margin-bottom:10px}
+      .custom-label{margin:11px 0 7px}
+      .key-help{margin-top:12px}
+      .meta{margin-top:9px}
+      #stick{width:105px;height:105px;bottom:calc(16px + env(safe-area-inset-bottom))}
+      #jump{width:91px;height:91px;bottom:calc(18px + env(safe-area-inset-bottom))}
+      #slide{width:65px;height:65px;right:135px;bottom:calc(31px + env(safe-area-inset-bottom))}
+      #control-tip{display:none}
+    }
+    @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  </style>
+</head>
+<body>
+  <div id="scene"></div>
+  <div id="vignette"></div>
+  <section id="hud" hidden aria-label="Game stats">
+    <div class="hud-top">
+      <div><div id="mark">RUNNERS<span style="color:#d77455">.</span></div><div id="chapter-label">VESPER / CH.01 — THE STEPS</div></div>
+      <div class="stats">
+        <div><div class="stat-label">SIGNALS</div><div class="stat-value small" id="pickup">0/5</div></div>
+        <div><div class="stat-label">TIME</div><div class="stat-value" id="time">00.0</div></div>
+        <div><div class="stat-label">BEST</div><div class="stat-value small" id="best">—</div></div>
+      </div>
+    </div>
+    <div class="progress-track"><div id="progress-fill"></div></div>
+    <div class="bottom-meta"><span>THE ROOFLINE → BELL TOWER</span><span><span id="speed">0</span> KM/H <span id="meter-track"><span id="meter-fill" style="display:block"></span></span></span></div>
+  </section>
+  <button id="pause" hidden aria-label="Pause game">Ⅱ</button>
+  <div id="toast" role="status"></div>
+  <div id="controls" hidden aria-label="Touchscreen controls">
+    <div id="stick" role="group" aria-label="Move character in any direction"><div id="thumb"></div></div>
+    <button id="slide" class="action" aria-label="Slide under beams">SLIDE</button>
+    <button id="jump" class="action" aria-label="Jump across rooftops">JUMP</button>
+    <div id="control-tip">HOLD FORWARD TO SPRINT</div>
+  </div>
+  <section class="overlay" id="splash" aria-labelledby="logo">
+    <div class="intro-grid">
+      <div class="menu">
+        <div class="eyebrow">VESPER CITY <span style="color:#f4e2d0bb">/</span> CHAPTER ONE</div>
+        <h1 id="logo">RUNNERS<span style="color:#cf6953">.</span></h1>
+        <div class="hero-label">THE STEPS <span style="color:#dba87f">/</span> ROOFTOP TRIAL</div>
+        <p class="story"><strong>Riven:</strong> “See that bell tower? Make it there before the light goes. Then maybe we'll talk.”<br><br>Cross nine connected rooftops. Jump the gaps. Duck under beams. Find five signal markers along the way.</p>
+        <div class="featureline"><span>01 / RUN</span><span>02 / LEAP</span><span>03 / SLIDE</span></div>
+        <button class="primary" id="start">START RUN &nbsp; ↗</button>
+        <div class="rotate-note">TIP / Rotate your phone sideways for the wider view. Portrait also works.</div>
+        <p class="meta">EARLY PLAYABLE BUILD · Mobile touchscreen or WASD + SPACE / C. For the cleanest screen, open this link directly in Safari and add it to your Home Screen.</p>
+      </div>
+      <aside class="customize" aria-label="Customize Kai">
+        <div class="custom-title">YOUR RUNNER / KAI</div>
+        <div class="custom-label">SKIN TONE</div>
+        <div class="swatches">
+          <button class="swatch" aria-label="Skin tone 1" data-skin="0" style="background:#e0ad87"></button>
+          <button class="swatch" aria-label="Skin tone 2" data-skin="1" style="background:#c18b66"></button>
+          <button class="swatch" aria-label="Skin tone 3" data-skin="2" style="background:#9c674c"></button>
+          <button class="swatch" aria-label="Skin tone 4" data-skin="3" style="background:#633e32"></button>
+          <button class="swatch" aria-label="Skin tone 5" data-skin="4" style="background:#efc7a6"></button>
+          <button class="swatch" aria-label="Skin tone 6" data-skin="5" style="background:#8e5b46"></button>
+        </div>
+        <div class="custom-label">JACKET</div>
+        <div class="swatches">
+          <button class="swatch" aria-label="Red jacket" data-jacket="0" style="background:#ad493b"></button>
+          <button class="swatch" aria-label="Teal jacket" data-jacket="1" style="background:#486b67"></button>
+          <button class="swatch" aria-label="Ochre jacket" data-jacket="2" style="background:#cf945c"></button>
+          <button class="swatch" aria-label="Slate jacket" data-jacket="3" style="background:#454c62"></button>
+          <button class="swatch" aria-label="Cream jacket" data-jacket="4" style="background:#c5b6a5"></button>
+        </div>
+        <div class="custom-label">HAIR</div>
+        <div class="swatches">
+          <button class="hair-choice" data-hair="0">CURLS</button>
+          <button class="hair-choice" data-hair="1">SHORT</button>
+          <button class="hair-choice" data-hair="2">LONG</button>
+        </div>
+        <div class="key-help">MOVE &nbsp; LEFT JOYSTICK / WASD<br>JUMP &nbsp; RIGHT BUTTON / SPACE<br>SLIDE &nbsp; RIGHT BUTTON / C<br>CHECKPOINTS &nbsp; AUTO-SAVED THIS RUN</div>
+        <button id="sound" class="secondary" style="margin-top:17px;padding:9px 12px">SOUND ON</button>
+      </aside>
+    </div>
+  </section>
+  <section id="modal" class="modal-wrap" hidden>
+    <div class="modal-inner">
+      <div class="eyebrow">RUNNERS / THE STEPS</div>
+      <h2 id="modal-title">PAUSED</h2>
+      <p id="modal-text">Take a breather.</p>
+      <div class="modal-buttons"><button class="primary" id="modal-primary">RESUME</button><button class="secondary" id="modal-secondary">RESTART RUN</button></div>
+    </div>
+  </section>
+  <div id="error" hidden><div><h2>RUNNERS COULDN'T START</h2><p id="error-message"></p><button class="primary" id="retry" onclick="location.reload()">RETRY</button></div></div>
+  <script type="module" src="./game.js"></script>
+</body>
+</html>
