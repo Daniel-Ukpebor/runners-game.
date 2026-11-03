@@ -101,8 +101,7 @@ const fs = require('fs');
  if(tricked.stunts<120)throw Error('Clean-air trick did not bank style points');
  // A context jump at a crate should trigger a speed vault rather than a collision.
  await page.evaluate(()=>window.__runnersTestApi.obstacle(0));
- await page.keyboard.down('w');await page.waitForTimeout(110);
- await page.keyboard.press('Space');await page.keyboard.up('w');
+ await page.keyboard.press('Space');
  const vaulted=await page.evaluate(()=>window.__runnersDiagnostics());
  console.log('VAULT:',JSON.stringify(vaulted));
  if(vaulted.vault<=0||vaulted.stunts<=tricked.stunts)throw Error('Approach jump did not vault the crate');
