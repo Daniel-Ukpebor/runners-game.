@@ -10,7 +10,8 @@
   <meta name="description" content="RUNNERS — The Steps. A stylized 3D parkour rooftop trial set in Vesper.">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
-  <title>RUNNERS — The Steps</title>
+  <title>RUNNERS — The Midnight Circuit</title>
+  <link rel="stylesheet" href="./systems.css?v=3">
   <style>
     :root{--paper:#efe0c9;--gold:#e7ad75;--red:#cf6953;--ink:#182125;--faint:rgba(239,224,201,.54)}
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -137,6 +138,7 @@
     <div class="bottom-meta"><span>THE ROOFLINE → BELL TOWER</span><span><span id="speed">0</span> KM/H <span id="meter-track"><span id="meter-fill" style="display:block"></span></span></span></div>
   </section>
   <button id="pause" hidden aria-label="Pause game">Ⅱ</button>
+  <button id="sound-hud" hidden aria-label="Toggle race music and sound">♫</button>
   <div id="toast" role="status"></div>
   <div id="controls" hidden aria-label="Touchscreen controls">
     <div id="stick" role="group" aria-label="Move character in any direction"><div id="thumb"></div></div>
@@ -195,6 +197,6 @@
     </div>
   </section>
   <div id="error" hidden><div><h2>RUNNERS COULDN'T START</h2><p id="error-message"></p><button class="primary" id="retry" onclick="location.reload()">RETRY</button></div></div>
-  <script type="module" src="./game.js"></script>
+  <script type="module" src="./game.js?v=3"></script>
 </body>
 </html>
