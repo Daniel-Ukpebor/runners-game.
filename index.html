@@ -49,7 +49,7 @@
     #control-tip{position:absolute;right:calc(max(29px,env(safe-area-inset-right)) + 37px);bottom:calc(9px + env(safe-area-inset-bottom));font-size:9px;letter-spacing:.14em;color:#f8e6c8c4;text-shadow:0 2px 4px black}
     .overlay{position:fixed;inset:0;z-index:5;background:linear-gradient(90deg,#152024f5 0%,#172126e6 34%,#17212688 65%,#17212624 100%);overflow-y:auto;touch-action:pan-y}
     .intro-grid{min-height:100%;display:flex;align-items:center;padding:calc(28px + env(safe-area-inset-top)) max(5vw,32px) calc(25px + env(safe-area-inset-bottom));gap:6vw}
-    .menu{width:min(530px,92vw);flex-shrink:0}
+    .menu{width:min(530px,54vw);flex-shrink:0}
     .eyebrow{color:var(--gold);font-size:11px;font-weight:900;letter-spacing:.29em}
     #logo{font-size:clamp(54px,9vw,112px);font-weight:1000;letter-spacing:-.085em;font-style:italic;line-height:.92;color:#fff0d8;transform:skew(-5deg);margin:14px 0 12px;text-shadow:4px 6px 0 #8b433a}
     #logo .slash{display:inline-block;width:38px;height:8px;background:var(--red);transform:rotate(-11deg) translate(-12px,-12px)}
@@ -101,7 +101,9 @@
       .bottom-meta{font-size:8px}
     }
     @media (orientation:landscape) and (max-height:530px){
-      .intro-grid{align-items:flex-start;padding-top:calc(16px + env(safe-area-inset-top));padding-bottom:20px}
+      .intro-grid{align-items:flex-start;gap:3vw;padding:calc(16px + env(safe-area-inset-top)) 24px 20px}
+      .menu{width:50vw}
+      .customize{min-width:0;flex:1;padding-left:15px}
       #logo{font-size:clamp(51px,8vw,78px);margin:5px 0}
       .hero-label{font-size:15px;margin:10px 0 4px}
       .story{font-size:12px;line-height:1.4;margin-bottom:10px}
