@@ -1,6 +1,6 @@
 // RUNNERS / in-engine cinematic direction.
 // Runs over the exact same 3D district as gameplay. There are no static story slides.
-export function createCinematic({THREE,scene,camera,actor,rival,runner,route,ensureCourse}){
+export function createCinematic({THREE,scene,camera,actor,rival,runner,route,ensureCourse,levelIndex}){
  const overlay=document.getElementById('story-overlay');
  const target=new THREE.Vector3(),look=new THREE.Vector3(),aim=new THREE.Vector3();
  const youthKai=runner.clone(true),youthRiven=rival.clone(true);
@@ -24,7 +24,7 @@ export function createCinematic({THREE,scene,camera,actor,rival,runner,route,ens
   if(shot!==sceneNum){shot=sceneNum;shotStarted=now;}
   const t=(now-shotStarted)/1000;
   const base=roof(0);
-  const past=sceneNum===0||sceneNum===1;
+  const past=levelIndex()===0&&(sceneNum===0||sceneNum===1);
   youthKai.visible=past;youthRiven.visible=past;
   actor.visible=!past;rival.visible=!past;
   if(past){
