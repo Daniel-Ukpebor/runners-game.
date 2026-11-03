@@ -2,6 +2,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.m
 import {createSystems,LEVELS} from './systems.js?v=7';
 import {createCinematic} from './cinematic.js?v=4';
 import {buildVesperLandmarks} from './vesper-art.js?v=6';
+import {dressVesperWithModels} from './environment-assets.js?v=6';
 
 const $ = id => document.getElementById(id);
 const ui = {
@@ -21,7 +22,7 @@ let renderer, camera, scene, world, actor, runner, rival, rivalArms=[], rivalLeg
 let startAt=0, elapsed=0, finished=false, collected=0, falls=0, feedbackUntil=0, flashUntil=0;
 let checkpointIndex=0, best=0, volume=true, audioContext=null, builtLevel=0;
 const route=[], obstacles=[], pickups=[], animated=[], groundShadows=[], speedPads=[], birds=[];
-let environmentArt=null;
+let environmentArt=null,externalArt=null;
 const radius=0.38, temp=new THREE.Vector3(), targetCamera=new THREE.Vector3(), cameraAim=new THREE.Vector3();
 const state={x:0,y:1,z:-5.5,vx:0,vz:0,vy:0,grounded:true,coyote:0,buffer:0,slide:0,boost:0,runPhase:0,stepTimer:0,angle:0,airTime:0,stuntScore:0,combo:0,comboWindow:0,pendingStunt:0,trick:0,trickUsed:false,vault:0,landing:0,trickType:0};
 const input={x:0,z:0,pointer:null,keys:new Set()};
@@ -321,6 +322,7 @@ function buildDistrict(){
   positions.forEach((p,i)=>roof(i,...p));
   surrounding();decorations();makeInteractables();
   environmentArt=buildVesperLandmarks({THREE,world,route,chapter:systems.levelIndex()});
+  externalArt=dressVesperWithModels({THREE,world,route});
   // Obstacles now demand actual parkour: full-width beams require SLIDE,
   // full-width low barriers require JUMP; crates offer slower detour lanes.
   systems.courseHazards().forEach(spec=>{
