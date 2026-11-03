@@ -205,6 +205,11 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   chime(460+current*80,.16,.035);
  }
  function startStory(force=false){
+  // Centralized transition: a result/paused overlay must NEVER remain visible
+  // behind the translucent in-engine cinematic.
+  const modal=$('modal');modal.hidden=true;modal.dataset.action='';
+  $('hud').hidden=true;$('controls').hidden=true;$('pause').hidden=true;
+  const soundHud=$('sound-hud');if(soundHud)soundHud.hidden=true;
   unlockSound();
   if(cutsceneTimer)clearTimeout(cutsceneTimer);
   const seen=save.storySeen[level];
