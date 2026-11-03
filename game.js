@@ -494,13 +494,13 @@ function simulation(dt){
   const right=input.keys.has('KeyD')||input.keys.has('ArrowRight');
   const up=input.keys.has('KeyW')||input.keys.has('ArrowUp');
   const down=input.keys.has('KeyS')||input.keys.has('ArrowDown');
-  let dx=clamp(input.x+Number(right)-Number(left),-1,1),dz=clamp(input.z+Number(up)-Number(down),-1,1);
+  let dx=clamp(-input.x+Number(left)-Number(right),-1,1),dz=clamp(input.z+Number(up)-Number(down),-1,1);
   const length=Math.hypot(dx,dz);if(length>1){dx/=length;dz/=length;}
   const running=dz>.68&&Math.abs(dx)<.8,topSpeed=running?10.4:8.2;
   const speed=state.slide>0?Math.max(9.3,topSpeed+1.1):topSpeed;
   state.vx=smooth(state.vx,dx*speed,state.grounded?13:7.5,dt);
   state.vz=smooth(state.vz,dz*speed+(state.boost>0?1.2:0),state.grounded?13:7.5,dt);
-  // Forward is +Z and joystick right is +X: no inverted steering.
+  // The camera looks toward +Z, so screen-right corresponds to world -X.
   state.x+=state.vx*dt;state.z+=state.vz*dt;
   const roof=route.find(p=>Math.abs(state.x-p.x)<p.w/2-.25&&Math.abs(state.z-p.z)<p.l/2-.15);
   const wasGrounded=state.grounded;
