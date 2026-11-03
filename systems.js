@@ -75,11 +75,14 @@ export function createSystems({THREE,getScene,onLaunch,onMenu,onStyle}){
   aside.querySelectorAll('[data-skin]').forEach((b,i)=>b.style.background=newSkin[i]);
   $('sound').textContent=save.muted?'SOUND OFF':'SOUND ON';
   const hudMeta=$('hud').querySelector('.bottom-meta');
-  hudMeta.innerHTML='<span id="race-label">THE STEPS → FINISH</span><span class="hud-readout"><span class="hud-credits">◈ <span id="coin-count">0</span></span> <span id="speed">0</span> KM/H <span id="meter-track"><span id="meter-fill" style="display:block"></span></span></span>';
+  hudMeta.firstElementChild.id='race-label';
+  const readout=hudMeta.lastElementChild;
+  readout.classList.add('hud-readout');
+  readout.insertAdjacentHTML('afterbegin','<span class="hud-credits">◈ <span id="coin-count">0</span></span>');
   const ghostTag=document.createElement('div');ghostTag.id='ghost-indicator';ghostTag.textContent='NO GHOST YET';$('hud').appendChild(ghostTag);
   const modal=$('modal').querySelector('.modal-buttons');
   const third=document.createElement('button');third.id='modal-tertiary';third.className='secondary';third.textContent='MAIN MENU';modal.appendChild(third);
-  third.addEventListener('click',()=>onMenu());
+  third.addEventListener('click',()=>{const mode=$('modal').dataset.action;if(mode==='next'){selectRace(level+1);startStory();}else if(mode==='restart'){onLaunch();}else onMenu();});
   const overlay=document.createElement('section');overlay.id='story-overlay';overlay.hidden=true;overlay.className='story-screen';overlay.setAttribute('aria-label','Story cutscene');
   overlay.innerHTML='<div class="story-stage"><div class="story-dawn" aria-hidden="true"><div class="sun-disc"></div><div class="story-houses"></div><div class="story-figures"><div class="mini-runner kai-kid"><i></i><b></b></div><div class="mini-runner riven-kid"><i></i><b></b></div></div></div><div class="story-copy"><div id="story-time" class="eyebrow"></div><div id="story-location" class="story-location"></div><h2 id="story-who"></h2><p id="story-dialogue"></p><div id="story-context"></div><div class="story-actions"><button id="story-next" class="primary">NEXT →</button><button id="story-skip" class="secondary">SKIP STORY</button></div><div id="story-step">1 / 4</div></div></div>';
   document.body.appendChild(overlay);
