@@ -22,7 +22,24 @@ const fs = require('fs');
  if(!init.hasCanvas||init.errorVisible||!init.introVisible)throw Error('Game failed initial render');
  fs.mkdirSync('test-results',{recursive:true});
  await page.screenshot({path:'test-results/runners-title.png'});
+ if(await page.locator('.race-row').count()!==0)throw Error('Race cards should render only on Races tab');
+ await page.locator('[data-tab="races"]').click();
+ if(await page.locator('.race-row').count()!==3)throw Error('Expected 3 distinct racing chapters');
+ if(!(await page.locator('[data-race="1"]').isDisabled()))throw Error('Chapter 2 should require chapter 1 completion');
+ await page.locator('[data-tab="upgrades"]').click();
+ if(await page.locator('.upgrade-row').count()!==3)throw Error('Upgrade workshop failed to render');
+ await page.locator('[data-tab="customize"]').click();
+ await page.locator('[data-build="1"]').click();
+ await page.locator('[data-hair="4"]').click();
+ const style=await page.evaluate(()=>JSON.parse(localStorage.getItem('runners.style')));
+ if(style.build!==1||style.hair!==4)throw Error('Runner customization not persisting');
+ await page.locator('[data-tab="story"]').click();
  await page.locator('#start').click({timeout:7000});
+ await page.locator('#story-overlay:not([hidden])').waitFor();
+ await page.screenshot({path:'test-results/runners-flashback.png'});
+ await page.locator('#story-next').click();
+ await page.locator('#story-skip').click();
+
  await page.waitForTimeout(700);
  const after=await page.evaluate(()=>({
    splashHidden:document.querySelector('#splash').hidden,
@@ -49,6 +66,7 @@ const fs = require('fs');
  await page.waitForTimeout(400);
  await page.screenshot({path:'test-results/runners-portrait.png'});
  await page.locator('#pause').click();
+ if((await page.locator('#modal-secondary').textContent())!=='RESTART RACE')throw Error('Restart button mislabeled');
  await page.locator('#modal-secondary').click();
  await page.keyboard.down('w');
  await page.waitForFunction(()=>window.__runnersDiagnostics().z>5.5,null,{timeout:13000});
@@ -59,6 +77,15 @@ const fs = require('fs');
  const postJump=await page.evaluate(()=>window.__runnersDiagnostics());
  console.log('ROOFTOP JUMP:',JSON.stringify({preJump,postJump}));
  if(postJump.z<12)throw Error('Jump failed to clear the first rooftop gap');
+ await page.locator('#pause').click();
+ await page.locator('#modal-tertiary').click();
+ const menu=await page.evaluate(()=>({visible:!document.querySelector('#splash').hidden,hudHidden:document.querySelector('#hud').hidden}));
+ if(!menu.visible||!menu.hudHidden)throw Error('MAIN MENU did not return to the actual home screen');
+ await page.locator('[data-tab="races"]').click();
+ await page.locator('[data-race="0"]').click();
+ await page.locator('#start').click();
+ await page.waitForTimeout(450);
+ if(await page.locator('#story-overlay').isVisible())throw Error('Already watched cutscene played again without being asked');
 
  if(errors.length)throw Error('JS runtime error(s): '+errors.join(' | '));
  console.log('SMOKE TEST PASSED: render, start, movement, responsive layout');
