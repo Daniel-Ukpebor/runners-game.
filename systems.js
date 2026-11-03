@@ -69,7 +69,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   title.innerHTML='THE STEPS <span style="color:#dba87f">/</span> A CITY TO OUTRUN';
   const story=menu.querySelector('.story');
   story.innerHTML='Kai and Riven started racing through Vesper when they were kids. Now the <strong>Midnight Circuit</strong> is open, and old promises have turned into real rivalries. <strong>Three districts. Three rivals. Your best times.</strong>';
-  menu.querySelector('.featureline').innerHTML='<span>STORY RACES</span><span>TIME GHOSTS</span><span>UPGRADES</span>';
+  menu.querySelector('.featureline').innerHTML='<span>THREE RIVALS</span><span>YOUR GHOST</span><span>ONE CITY</span>';
   $('start').textContent='CONTINUE STORY  ↗';
   const select=document.createElement('nav');select.id='menu-nav';select.setAttribute('aria-label','Game menu');
   select.innerHTML='<button data-tab="story" class="nav-active">HOME</button><button data-tab="races">DISTRICTS</button><button data-tab="upgrades">WORKSHOP</button><button data-tab="customize">LOADOUT</button>';
@@ -93,6 +93,9 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   const gearOptions=document.createElement('div');gearOptions.id='gear-options';
   gearOptions.innerHTML='<div class="custom-label">GEAR</div><div class="swatches"><button class="hair-choice" data-gear="0">DAYPACK</button><button class="hair-choice" data-gear="1">NO PACK</button></div>';
   hairSwatches.insertAdjacentElement('afterend',gearOptions);
+  const accessories=document.createElement('div');accessories.id='accessories';
+  accessories.innerHTML='<div class="custom-label">FACE / ACCESSORIES</div><div class="swatches"><button class="hair-choice" data-accessory="0">BARE</button><button class="hair-choice" data-accessory="1">GLASSES</button><button class="hair-choice" data-accessory="2">HEADBAND</button><button class="hair-choice" data-accessory="3">GOGGLES</button></div>';
+  gearOptions.insertAdjacentElement('afterend',accessories);
 
   const oldSkin=['#e0ad87','#c18b66','#9c674c','#633e32','#efc7a6','#8e5b46'];
   const newSkin=['#edc7a5','#d8a47b','#b77c58','#89583e','#573728','#c99169'];
