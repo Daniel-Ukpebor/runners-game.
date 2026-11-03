@@ -614,10 +614,17 @@ function animateCharacter(dt){
   // Fake contact shadow that shrinks as Kai jumps.
   const sh=groundShadows[0];if(sh){sh.visible=state.y<3.4;sh.position.y=-state.y+.018;sh.scale.x=.32+Math.max(0,state.y-1)*.04;sh.scale.z=.28+Math.max(0,state.y-1)*.04;}
 }
+let lastFrame=0,simCarry=0;
 function frame(now){
   requestAnimationFrame(frame);
-  const dt=Math.min(.045,(now-(frame.previous||now))/1000);frame.previous=now;
-  simulation(dt);animateCharacter(dt);updateRival(dt);
+  const dt=lastFrame?Math.min(.18,(now-lastFrame)/1000):1/60;lastFrame=now;
+  // Fixed 60 Hz physics with catch-up steps: dropping frames never causes slow-motion.
+  simCarry=Math.min(.18,simCarry+dt);
+  let steps=0;
+  while(simCarry>=1/60&&steps<11){
+    simulation(1/60);simCarry-=1/60;steps++;
+  }
+  animateCharacter(dt);updateRival(dt);
   const narrow=innerHeight>innerWidth;
   const back=narrow?8.5:6.1,up=narrow?4.8:3.45,ahead=narrow?6.3:6.8;
   const followX=state.x*.82;
