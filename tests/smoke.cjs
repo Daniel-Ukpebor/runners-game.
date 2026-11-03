@@ -48,6 +48,18 @@ const fs = require('fs');
  await page.setViewportSize({width:390,height:844});
  await page.waitForTimeout(400);
  await page.screenshot({path:'test-results/runners-portrait.png'});
+ await page.locator('#pause').click();
+ await page.locator('#modal-secondary').click();
+ await page.keyboard.down('w');
+ await page.waitForTimeout(1350);
+ const preJump=await page.evaluate(()=>window.__runnersDiagnostics());
+ await page.keyboard.press('Space');
+ await page.waitForTimeout(1100);
+ await page.keyboard.up('w');
+ const postJump=await page.evaluate(()=>window.__runnersDiagnostics());
+ console.log('ROOFTOP JUMP:',JSON.stringify({preJump,postJump}));
+ if(postJump.z<12)throw Error('Jump failed to clear the first rooftop gap');
+
  if(errors.length)throw Error('JS runtime error(s): '+errors.join(' | '));
  console.log('SMOKE TEST PASSED: render, start, movement, responsive layout');
  await browser.close();
