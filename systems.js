@@ -86,7 +86,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   const oldSkin=['#e0ad87','#c18b66','#9c674c','#633e32','#efc7a6','#8e5b46'];
   const newSkin=['#edc7a5','#d8a47b','#b77c58','#89583e','#573728','#c99169'];
   aside.querySelectorAll('[data-skin]').forEach((b,i)=>b.style.background=newSkin[i]);
-  $('sound').textContent=save.muted?'SOUND OFF':'SOUND ON';
+  $('sound').textContent=save.muted?'SOUND OFF':'TAP FOR AUDIO';
   $('sound').classList.add('menu-audio');first.insertAdjacentElement('beforebegin',$('sound'));
   $('sound-hud').textContent=save.muted?'♪̸':'♫';
   const hudMeta=$('hud').querySelector('.bottom-meta');
@@ -243,6 +243,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
    if(!audio){audio=new A();master=audio.createGain();master.gain.value=.35;master.connect(audio.destination);}
    if(audio.state==='suspended')audio.resume();
    audioEnabled=true;
+   $('sound').textContent='SOUND ON';
    chime(510,.095,.034);
   }catch(e){audioEnabled=false;}
  }
@@ -271,6 +272,8 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   }
  }
  function toggleAudio(){
+  // First tap explicitly unlocks audio on iOS; it is not a mute operation.
+  if(!audio&&!save.muted){unlockSound();return true;}
   save.muted=!save.muted;persist();
   if(!save.muted)unlockSound();
   if(master)master.gain.value=save.muted?0:.35;
@@ -329,6 +332,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   init,getLevel,levelIndex:()=>level,coursePositions:()=>getLevel().positions,courseHazards:()=>getLevel().hazards,
   startStory,showMenu,beforeRun,track,afterFinish,getUpgrade,unlockSound,toggleAudio,sfx,
   getBest:()=>save.bests[level],getWallet:()=>save.wallet,isMuted:()=>save.muted,
-  setRace:selectRace,refresh:()=>{setTab(tab);updateHud()},refreshAvatar,drawPreview
+  setRace:selectRace,refresh:()=>{setTab(tab);updateHud()},refreshAvatar,drawPreview,
+  audioState:()=>audio?.state||'not-created'
  };
 }
