@@ -108,7 +108,7 @@ function pick(a){return a[Math.floor(rnd()*a.length)]}
 function clamp(n,a,b){return Math.min(Math.max(n,a),b)}
 function smooth(current,target,k,dt){return THREE.MathUtils.lerp(current,target,1-Math.exp(-k*dt))}
 function boot() {
-  scene=new THREE.Scene();scene.background=new THREE.Color(0x8095a2);scene.fog=new THREE.FogExp2(0xbbaea6,.0108);
+  scene=new THREE.Scene();scene.background=new THREE.Color(0x96a5aa);scene.fog=new THREE.FogExp2(0xc3b0a3,.0095);
 
   // Painted-sky dome: evening amber at the horizon, deep slate overhead.
   const skydome=new THREE.Mesh(new THREE.SphereGeometry(185,24,14),new THREE.ShaderMaterial({
@@ -121,13 +121,13 @@ function boot() {
   renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance',alpha:false});
   renderer.outputColorSpace=THREE.SRGBColorSpace;
   renderer.toneMapping=THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure=1.17;
+  renderer.toneMappingExposure=1.24;
   renderer.setPixelRatio(Math.min(devicePixelRatio, isTouch?1.45:1.8));
   renderer.setSize(innerWidth,innerHeight);
   renderer.domElement.setAttribute('aria-label','RUNNERS 3D rooftop course');
   ui.scene.appendChild(renderer.domElement);
-  skyHem=new THREE.HemisphereLight(0xf6e5d5,0x51596b,1.75);scene.add(skyHem);
-  keySun=new THREE.DirectionalLight(0xffbd84,2.55);keySun.position.set(-34,45,70);scene.add(keySun);
+  skyHem=new THREE.HemisphereLight(0xffe6c9,0x525563,2.05);scene.add(skyHem);
+  keySun=new THREE.DirectionalLight(0xffca94,2.75);keySun.position.set(-34,45,70);scene.add(keySun);
   const ambient=new THREE.DirectionalLight(0xd5dfea,.55);ambient.position.set(20,20,-20);scene.add(ambient);
   ball(scene,-65,33,148,9,9,1,mat(0xffd3a0,.65));
   buildDistrict();optimizeDistrict();makeCharacter();makeRival();makeContactShadow();tuneDistrict();applyStyle();systems.init();createStuntHud();cinematic=createCinematic({THREE,scene,camera,actor,rival,runner,route,ensureCourse:()=>{if(builtLevel!==systems.levelIndex())rebuildCourse()},levelIndex:()=>systems.levelIndex()});bindControls();resize();
@@ -977,13 +977,20 @@ function frame(now){
   const filmPlaying=cinematic&&cinematic.tick(now,dt);
   const narrow=innerHeight>innerWidth;
   const back=narrow?8.5:6.1,up=narrow?4.8:3.45,ahead=narrow?6.3:6.8;
-  const followX=state.x*.82;
+  const menuOpen=!ui.splash.hidden;
   if(!filmPlaying){
-   targetCamera.set(followX, state.y+up, state.z-back);
-   camera.position.lerp(targetCamera,1-Math.exp(-3.6*dt));
-   cameraAim.set(state.x*.95,state.y+(narrow?1.3:1.2),state.z+ahead);
+   if(menuOpen){
+     // A quiet moving establishing shot: let the authored city occupy the right side of the menu.
+     targetCamera.set(state.x-4.9+Math.sin(now*.00022)*.45,state.y+4.2,state.z-12.8);
+     cameraAim.set(state.x+.55,state.y+2.0,state.z+16);
+   }else{
+     targetCamera.set(state.x*.82,state.y+up,state.z-back);
+     cameraAim.set(state.x*.95,state.y+(narrow?1.3:1.2),state.z+ahead);
+   }
+   camera.position.lerp(targetCamera,1-Math.exp(-(menuOpen?1.8:5.7)*dt));
    camera.lookAt(cameraAim);
-   const goalFov=(narrow?65:67)+Math.max(0,Math.hypot(state.vx,state.vz)-7)*.48+(state.boost>0?2:0);camera.fov=smooth(camera.fov,goalFov,2,dt);camera.updateProjectionMatrix();
+   const goalFov=menuOpen?60:(narrow?65:67)+Math.max(0,Math.hypot(state.vx,state.vz)-7)*.48+(state.boost>0?2:0);
+   camera.fov=smooth(camera.fov,goalFov,menuOpen?1.9:4.7,dt);camera.updateProjectionMatrix();
   }
   for(const [i,p] of pickups.entries())if(!p.taken){
     p.group.rotation.y+=dt*1.1;
