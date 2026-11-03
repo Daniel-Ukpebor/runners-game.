@@ -27,10 +27,17 @@ export const STORIES=[
  ]
 ];
 const SAVE_KEY='runners.save.v3';
-const fresh=()=>({wallet:0,unlocked:[true,false,false],wins:[0,0,0],bests:[null,null,null],ghosts:[null,null,null],storySeen:[false,false,false],upgrades:{pace:0,spring:0,grip:0},muted:false});
+const fresh=()=>({wallet:0,unlocked:[true,false,false],wins:[0,0,0],bests:[null,null,null],ghosts:[null,null,null],ghostTimes:[null,null,null],storySeen:[false,false,false],upgrades:{pace:0,spring:0,grip:0},muted:false});
 function loadSave(){
  let x=fresh();try{const a=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(a&&typeof a==='object')x={...x,...a,upgrades:{...x.upgrades,...(a.upgrades||{})}}}catch(e){}
- for(const k of ['bests','ghosts','wins','unlocked','storySeen'])if(!Array.isArray(x[k]))x[k]=fresh()[k];
+ for(const k of ['bests','ghosts','ghostTimes','wins','unlocked','storySeen'])if(!Array.isArray(x[k]))x[k]=fresh()[k];
+ // Preserve the user's Version 2 record even though older builds did not record a replay.
+ try{
+  if(!localStorage.getItem(SAVE_KEY)){
+   const previous=Number(localStorage.getItem('runners.best'));
+   if(Number.isFinite(previous)&&previous>0)x.bests[0]=previous;
+  }
+ }catch(e){}
  return x;
 }
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
@@ -45,7 +52,7 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   $('race-label').textContent=l.name+' → FINISH';
   $('best').textContent=save.bests[level]===null?'—':Number(save.bests[level]).toFixed(1)+'s';
   $('coin-count').textContent=String(save.wallet);
-  $('ghost-indicator').textContent=save.ghosts[level]?'GHOST ON':'NO GHOST YET';
+  $('ghost-indicator').textContent=save.ghosts[level]?'YOUR SHADOW '+Number(save.ghostTimes[level]||save.bests[level]||0).toFixed(1)+'s':'NO SHADOW RECORDED';
   $('ghost-indicator').classList.toggle('ghost-ready',!!save.ghosts[level]);
   const credits=$('menu-credits');if(credits)credits.textContent=String(save.wallet);
  }
@@ -216,9 +223,11 @@ export function createSystems({THREE,getScene,getRunner,onLaunch,onMenu,onStyle}
   const prev=save.bests[level],personalBest=prev===null||elapsed<prev;
   const reward=getLevel().reward+collected*12+(personalBest?30:0);
   save.wallet+=reward;save.wins[level]=(save.wins[level]||0)+1;
-  if(personalBest){
-   save.bests[level]=+elapsed.toFixed(2);
-   save.ghosts[level]=record.length?record.slice(-850):null;
+  if(personalBest)save.bests[level]=+elapsed.toFixed(2);
+  // A first replay is recorded even if an older (pre-ghost) best already exists.
+  if(record.length&&(personalBest||!save.ghosts[level])){
+   save.ghosts[level]=record.slice(-850);
+   save.ghostTimes[level]=+elapsed.toFixed(2);
   }
   const newlyUnlocked=level<LEVELS.length-1&&!save.unlocked[level+1];
   if(newlyUnlocked)save.unlocked[level+1]=true;
