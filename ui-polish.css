@@ -18,7 +18,7 @@ body:has(#story-overlay:not([hidden])) :is(#modal,#splash,#hud,#controls,#pause,
  background:#25383d;border-right:1px solid #ecd0ac30;
 }
 #studio-stage .studio-head{align-self:stretch;flex:none;margin:0;position:relative;}
-#studio-back{position:absolute;top:0;right:0;z-index:15;white-space:nowrap;min-height:34px;padding:8px 11px!important;font-size:9px!important;letter-spacing:.08em;background:#17252b!important;}
+#studio-back{position:absolute!important;top:18px;right:calc(42% + 20px);z-index:40!important;white-space:nowrap;min-height:34px;padding:8px 11px!important;font-size:9px!important;letter-spacing:.08em;background:#17252b!important;pointer-events:auto!important;}
 @media(max-width:430px){#studio-back{top:4px;padding:7px 9px!important;font-size:8px!important}}
 #studio-stage .studio-head h2{
  margin:0;font-size:clamp(34px,7vw,70px);font-weight:950;font-style:italic;
@@ -73,3 +73,6 @@ body:has(#story-overlay:not([hidden])) :is(#modal,#splash,#hud,#controls,#pause,
  #studio-controls .custom-label{margin:10px 0 6px!important;}
  #studio-actions{margin-top:15px;}
 }
+
+@media(orientation:landscape) and (max-height:520px){#studio-back{top:13px;right:calc(44% + 16px);}}
+@media(orientation:portrait){#studio-back{right:20px;top:18px;}}
