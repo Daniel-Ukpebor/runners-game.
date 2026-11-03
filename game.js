@@ -67,7 +67,7 @@ function boot() {
   const sun=new THREE.DirectionalLight(0xffbd84,3.2);sun.position.set(-34,45,70);scene.add(sun);
   const ambient=new THREE.DirectionalLight(0xd5dfea,.7);ambient.position.set(20,20,-20);scene.add(ambient);
   ball(scene,-65,33,148,9,9,1,mat(0xffd3a0,.65));
-  buildDistrict();makeCharacter();applyStyle();bindControls();resize();
+  buildDistrict();optimizeDistrict();makeCharacter();applyStyle();bindControls();resize();
   ui.best.textContent=best?best.toFixed(1)+'s':'—';
   camera.position.set(0,5,-15);
   cameraAim.set(0,1,6);
@@ -244,6 +244,34 @@ function buildDistrict(){
   tube(world,bx,19,bz,1.55,5,1.55,0x805c55);
   ball(world,bx,21.5,bz,2.6,.95,2.6,0xd0a887);
 }
+
+function optimizeDistrict(){
+  // Static city geometry is batched into GPU instancing. Hundreds of window
+  // frames, tiles and stone details cost a handful of draw calls on phones.
+  world.updateMatrixWorld(true);
+  const dynamic=new Set();
+  for(const p of pickups)p.group.traverse(o=>dynamic.add(o));
+  const groups=new Map(), removals=[];
+  world.traverse(o=>{
+    if(!o.isMesh||dynamic.has(o))return;
+    if(o.geometry!==boxGeo&&o.geometry!==sphereGeo&&o.geometry!==cylinderGeo)return;
+    const key=o.geometry.uuid+'|'+o.material.uuid;
+    if(!groups.has(key))groups.set(key,{geometry:o.geometry,material:o.material,items:[]});
+    groups.get(key).items.push(o.matrixWorld.clone());
+    removals.push(o);
+  });
+  for(const o of removals)o.parent.remove(o);
+  for(const group of groups.values()){
+    if(!group.items.length)continue;
+    const instanced=new THREE.InstancedMesh(group.geometry,group.material,group.items.length);
+    group.items.forEach((matrix,i)=>instanced.setMatrixAt(i,matrix));
+    instanced.instanceMatrix.needsUpdate=true;
+    instanced.frustumCulled=false;
+    instanced.name='city-static-batch';
+    world.add(instanced);
+  }
+}
+
 function makeCharacter(){
   actor=new THREE.Group();scene.add(actor);
   runner=new THREE.Group();actor.add(runner);
