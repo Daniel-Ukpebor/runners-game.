@@ -1,0 +1,150 @@
+/* RUNNERS / 0.6 visual reset — no decorative cards, fake badges or wall of text.
+   The environment does the talking. One action, one chapter, one clean nav. */
+#splash.overlay{
+ background:linear-gradient(90deg,rgba(11,19,22,.94) 0%,rgba(13,22,25,.76) 29%,rgba(15,24,26,.06) 68%,transparent 100%)!important;
+}
+#splash>.intro-grid{
+ min-height:100%!important;
+ background:transparent!important;
+ display:flex!important;align-items:flex-end!important;
+ padding:calc(24px + env(safe-area-inset-top)) clamp(25px,5vw,75px) calc(32px + env(safe-area-inset-bottom))!important;
+}
+#splash .menu{
+ display:flex!important;flex-direction:column!important;align-items:flex-start!important;
+ width:min(470px,51vw)!important;max-width:none!important;min-width:0!important;
+ flex-shrink:0!important;gap:0!important;position:relative;
+}
+#splash .menu>.eyebrow{order:0;margin:0 0 7px;color:#efc99e!important;letter-spacing:.24em!important;font-size:9px!important}
+#splash #logo{
+ order:1;display:block!important;
+ font-family:Impact,"Arial Narrow","Franklin Gothic Heavy",sans-serif!important;
+ font-size:clamp(60px,8.2vw,119px)!important;
+ line-height:.90!important;
+ letter-spacing:-.047em!important;
+ transform:skew(-9deg)!important;
+ margin:0 0 20px!important;padding:0!important;
+ font-style:italic!important;font-weight:900!important;
+ color:#fff0db!important;
+ text-shadow:3px 4px 0 rgba(176,87,66,.55)!important;
+}
+#splash #menu-nav{
+ order:2;
+ display:flex!important;gap:12px!important;align-items:center!important;
+ width:100%;border:0!important;
+ border-bottom:1px solid #efd5b73a!important;
+ margin:0 0 22px!important;padding:0 0 8px!important;
+}
+#splash #menu-nav button{
+ border:0!important;background:transparent!important;border-radius:0!important;
+ padding:9px 1px 7px!important;font-size:11px!important;font-weight:900!important;
+ line-height:1!important;letter-spacing:.085em!important;
+ color:#e4d2bdad!important;
+ transition:color .15s ease!important;white-space:nowrap;
+}
+#splash #menu-nav button.nav-active{color:#fff0dd!important;box-shadow:0 3px 0 #f6b37f!important}
+#splash .hero-label{order:3!important;color:#efc49b!important;font-size:9px!important;letter-spacing:.25em!important;margin:0 0 12px!important}
+#splash #menu-content{order:4!important;width:100%!important;max-width:none!important;margin:0!important;padding:0!important}
+#splash #start{
+ order:5!important;display:block!important;position:relative!important;
+ margin:24px 0 0!important;
+ width:min(248px,100%)!important;min-width:170px!important;
+ min-height:56px!important;padding:17px 21px!important;
+ background:#efb27e!important;color:#1b262a!important;border:0!important;
+ box-shadow:none!important;border-radius:0!important;
+ font:900 13px/1 "Arial Narrow",Arial,sans-serif!important;letter-spacing:.18em!important;
+ text-align:left!important;transition:background .15s,transform .15s!important;
+}
+#splash #start:hover,#splash #start:focus-visible{background:#ffd0a1!important;transform:translateY(-2px)!important}
+#splash #start:active{transform:translateY(1px)!important}
+#splash .hub-hint{order:6!important;display:block!important;margin:18px 0 0!important;color:#f3cba48c!important;font-size:9px!important;letter-spacing:.13em!important}
+#splash .hub-hint b{color:#f3cba48c!important;font-size:11px!important}
+#splash .story,#splash .featureline,#splash .intro-divider,#splash .meta,#splash .rotate-note{display:none!important}
+#splash .chapter-kicker{font-size:10px;letter-spacing:.28em;color:#e5b58c;font-weight:800;margin:0 0 8px}
+#splash .current-chapter{
+ font:italic 900 clamp(34px,4.3vw,57px)/.98 Impact,"Arial Narrow",Arial,sans-serif!important;
+ letter-spacing:.012em!important;color:#fff0d9!important;
+ margin:0 0 13px!important;text-transform:uppercase;
+}
+#splash .hub-rival{display:flex;gap:13px;align-items:baseline;margin:2px 0 17px;color:#f0e4d3}
+#splash .hub-rival span{font-size:11px;letter-spacing:.22em;color:#e3ad80}
+#splash .hub-rival strong{font-size:18px;letter-spacing:.13em;font-weight:850}
+#splash .hub-meta{display:flex;gap:24px;border-top:1px solid #efd5b749;padding-top:13px;max-width:380px}
+#splash .hub-meta span{color:#d2baa4;font-size:9px;letter-spacing:.12em;font-weight:800;display:flex;flex-direction:column;gap:5px}
+#splash .hub-meta b{color:#fff2dc;font-size:16px;letter-spacing:.015em;font-variant-numeric:tabular-nums}
+#splash #menu-content .content-eyebrow{font-size:10px!important;letter-spacing:.18em!important;color:#e7bb94!important}
+#splash #menu-content .race-list{max-height:min(34vh,250px);overflow:auto;width:100%;scrollbar-width:thin}
+#splash #menu-content .race-row{
+ display:flex!important;align-items:center!important;min-height:61px!important;
+ border:0!important;border-bottom:1px solid #ffdfbb32!important;
+ background:#1b2a2db7!important;color:#f8e7d4!important;
+ margin-bottom:4px!important;padding:10px 12px!important;
+ transition:background .12s,transform .12s!important;
+}
+#splash #menu-content .race-row:not(:disabled):hover{background:#2b3d3fbf!important;transform:translateX(3px)!important}
+#splash #menu-content .race-row.chosen{border-left:3px solid #efb27e!important;background:#293a3fbd!important}
+#splash #menu-content .race-row:disabled{opacity:.38!important}
+#splash .race-number{color:#efba88!important;font-size:19px!important}
+#splash .race-copy b{font-size:14px!important}
+#splash .race-copy small{font-size:9px!important}
+#splash .race-record{font-size:12px!important}
+#splash .future-routes{opacity:.65;gap:7px!important}
+#splash .future-route{border:0!important;border-left:1px solid #ecc09e8c!important;padding:8px!important;font-size:9px!important}
+#splash .future-route small{font-size:8px!important}
+#splash .tier-selector{gap:7px!important}
+#splash .tier-selector button{border-radius:0!important}
+#splash .menu-hint{display:none!important}
+#splash .upgrade-row{border-bottom:1px solid #efd9bd32!important}
+#splash .upgrade-row b{font-size:12px}
+#splash .upgrade-row small{font-size:10px!important}
+#splash #menu-content .menu-wallet{padding:9px 0!important}
+#splash #menu-content .tier-note{margin-bottom:8px!important}
+#hud .stat-label{font-size:9px!important}
+#hud #time{font:800 29px/1 Arial,sans-serif!important;font-variant-numeric:tabular-nums}
+#hud .stats{gap:17px!important}
+#hud #mark{font-size:17px!important;letter-spacing:.2em!important}
+#hud #chapter-label{font-size:9px!important;letter-spacing:.12em!important}
+#hud #ghost-indicator.ghost-ready{color:#a8ded3!important}
+#hud #stunt-hud{top:calc(63px + env(safe-area-inset-top))!important}
+#hud #stunt-combo{color:#efc49f!important}
+#toast{top:15%!important;font-size:12px!important;padding:8px 13px!important;border-left:3px solid #efb27e!important;background:#1e2a2bcf!important;box-shadow:none!important}
+#controls .action{box-shadow:none!important;border-width:1px!important;transition:background .13s,transform .13s!important}
+#controls .action.pressed{transform:scale(.96)!important}
+#controls #stick{background:#12212635!important;box-shadow:none!important}
+@media (orientation:landscape) and (max-height:560px){
+ #splash>.intro-grid{padding:calc(13px + env(safe-area-inset-top)) 22px calc(12px + env(safe-area-inset-bottom))!important;align-items:center!important}
+ #splash .menu{width:min(490px,53vw)!important}
+ #splash #logo{font-size:clamp(51px,7.1vw,70px)!important;margin-bottom:10px!important}
+ #splash .menu>.eyebrow{font-size:8px!important;margin-bottom:5px!important}
+ #splash #menu-nav{margin-bottom:10px!important;padding-bottom:3px!important;gap:12px!important}
+ #splash #menu-nav button{font-size:9px!important;padding:6px 0!important}
+ #splash .hero-label{display:none!important}
+ #splash .chapter-kicker{font-size:8px;margin-bottom:4px!important}
+ #splash .current-chapter{font-size:clamp(27px,4vw,38px)!important;margin-bottom:8px!important}
+ #splash .hub-rival{margin-bottom:8px!important}
+ #splash .hub-rival strong{font-size:13px!important}
+ #splash .hub-meta{padding-top:8px!important;gap:15px!important}
+ #splash .hub-meta span{font-size:8px!important}
+ #splash .hub-meta b{font-size:13px!important}
+ #splash #start{min-height:41px!important;margin:13px 0 0!important;padding:12px 18px!important;font-size:11px!important;width:190px!important}
+ #splash .hub-hint{margin-top:9px!important;font-size:7px!important}
+ #splash #menu-content .race-list{max-height:29vh}
+ #splash #menu-content .race-row{min-height:39px!important;padding:5px 9px!important}
+ #splash .future-route{padding:4px!important}
+ #splash .future-route small{display:none}
+ #splash .tier-selector{margin:4px 0!important}
+ #splash .tier-selector button{padding:5px 7px!important}
+}
+@media (orientation:portrait){
+ #splash>.intro-grid{align-items:flex-start!important;padding:calc(38px + env(safe-area-inset-top)) 24px 30px!important}
+ #splash .menu{width:100%!important}
+ #splash #logo{font-size:clamp(62px,15vw,100px)!important;margin:0 0 19px!important}
+ #splash #menu-nav{gap:14px!important;margin-bottom:23px!important}
+ #splash #menu-nav button{font-size:10px!important}
+ #splash .current-chapter{font-size:43px!important}
+ #splash #start{width:100%!important;max-width:290px!important}
+ #splash #menu-content .race-list{max-height:41vh}
+ #hud .stat-value{font-size:17px!important}
+ #hud #time{font-size:22px!important}
+ #hud .stats>div:first-child,#hud .stats>div:last-child{display:none!important}
+}
+@media (prefers-reduced-motion:reduce){#splash #start,#splash .race-row{transition:none!important}}
